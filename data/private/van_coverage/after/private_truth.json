@@ -1,0 +1,42 @@
+{
+  "format": "weak-rsa-private",
+  "description": "Educational evaluator truth; never an attack input",
+  "expected_vulnerable_ids": [
+    "key_001",
+    "key_002"
+  ],
+  "private_truth": {
+    "key_001": {
+      "p": "0xc4aebb7c778ee995a77a4aceaa0bfb0d662eb9c4bdbcba32e2e48b7214f2f9a50e709ba5458bfc855915a5c843bc1bdab60a37ce9019d5fe7e38cbb019a26d814e569f5474ede05fd570c6c93757002b3a0ef15d6bb789e03c1bfbcc24aedbcee1d3b4645738040be16dab0e682f1e7f7f68c24f4b4dd939448aeb45e451b9bb",
+      "q": "0xf372e9e658f59b81b766cc10d48adb427f6e5bb902078ad5a0e7e8201d860674f9fc8bded722ae2f201678458a6ce9719e8c3fefe540596214ebd62fd55bf94001d9db2972bc7351c1e3fde74c284047e711c94f99e2ebe9dfdb56acf9de49c79f009adcc3890b3fbe7bbe88dc985c9293f4ba021e5a010ab580cda1ee943b6f",
+      "case_type": "shared_prime",
+      "expected_message_hex": "56616e2773207368617265642d7072696d65205253412064656d6f2e",
+      "intended_weak_generation": true,
+      "observable_shared_factor": true
+    },
+    "key_002": {
+      "p": "0xc4aebb7c778ee995a77a4aceaa0bfb0d662eb9c4bdbcba32e2e48b7214f2f9a50e709ba5458bfc855915a5c843bc1bdab60a37ce9019d5fe7e38cbb019a26d814e569f5474ede05fd570c6c93757002b3a0ef15d6bb789e03c1bfbcc24aedbcee1d3b4645738040be16dab0e682f1e7f7f68c24f4b4dd939448aeb45e451b9bb",
+      "q": "0xc5e35d94a19f512a730b42c781ebc55e5200d9cb9861a8f4a91c4f4ebc118fd3266445832e607a90bb484591044d420dfef32f957c292cda0d1caa08df488e0aa01ac259ca4d3bf5d6cf01d80836bd7a90bc9c0f7458dff575f645f6a7d456530569792b34f5d04a1be6758c6360156aa5728f9596f2289e48baa0344f2a5921",
+      "case_type": "shared_prime",
+      "expected_message_hex": "56616e2773207368617265642d7072696d65205253412064656d6f2e",
+      "intended_weak_generation": true,
+      "observable_shared_factor": true
+    },
+    "key_003": {
+      "p": "0xfa3aff74e9573615fc3aa7f1ad782322df3489c2179f4029898d5c3b00a6aec68ccb12e6f21e77cd51a482acf58623deb156720328d3c0a24feb3ab336c17d217b690667d7ef6d43d910fb807c56568a6f875f40bccba3cc2f7de8dddcb895f0f2724c8a69633d30d9d8d9533c0e686f19c848e3cf1c8e6e29c545ac068dc659",
+      "q": "0xf1dda9aecee4337317d735c7bfbbde01e6904ceb783ab3d0096ca43ff661e1bc24dff1bdd0964aef0e1175b12ec4c50b4b55329cd087c323bba6349e9a320cbb92666bd7ee11c51a631879f67dfb305aef3fef6fffb047d66626ac66c7cbef02c87bedde6b50383417f35fce74974d5a231bf7c30e16ff15fa1607c3ed77024f",
+      "case_type": "control",
+      "expected_message_hex": "56616e2773207368617265642d7072696d65205253412064656d6f2e",
+      "intended_weak_generation": false,
+      "observable_shared_factor": false
+    },
+    "key_004": {
+      "p": "0xf1ce71e03898ba45275047d922603c20c56c9c1126df4ab8efd27da5d99d39ed4acfb5cb4068c609a113ce2d10ab12b24e9a0f208b177dbbe2dd38d338a5f0f0c200e284ed4a98cc2a42f60c270c699f3c720113d939bb35885556b4f857af9ced8b39afe0566f38606151df1bb64aeb332868dbc9614949649cb36d069aaa85",
+      "q": "0xef2e33ddd70931fffc36337b91db61330207ae5d7d76a184a1ede3f8327fb1a5bcf3e0ea5e8caf79d24904f7a369c7ab03b15e9426e607e0fbbf1306e1098e350ca26a6b098720476ed38cda20531d320f364d7c1b373cf97f341c76c237245e59a570c263c68891c8905d85ae48f81d654ced976920759930d4314c9c3ad253",
+      "case_type": "control",
+      "expected_message_hex": "56616e2773207368617265642d7072696d65205253412064656d6f2e",
+      "intended_weak_generation": false,
+      "observable_shared_factor": false
+    }
+  }
+}

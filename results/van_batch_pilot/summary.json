@@ -1,0 +1,82 @@
+{
+  "run_id": "20261028T113441Z_033c2bd9",
+  "all_runs_ok": true,
+  "num_datasets": 3,
+  "trials_requested": 5,
+  "timing_rows": 30,
+  "memory_rows": 6,
+  "statistics": [
+    {
+      "dataset_id": "m20_bits2048",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 20,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 0.182841666,
+      "min_seconds": 0.182730375,
+      "max_seconds": 0.19673025,
+      "stdev_seconds": 0.0061996298495064816
+    },
+    {
+      "dataset_id": "m20_bits2048",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 20,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 0.160683958,
+      "min_seconds": 0.160669542,
+      "max_seconds": 0.160788417,
+      "stdev_seconds": 5.064867124318086e-05
+    },
+    {
+      "dataset_id": "m50_bits2048",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 50,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 0.574474958,
+      "min_seconds": 0.573816917,
+      "max_seconds": 0.586832209,
+      "stdev_seconds": 0.0055884448045078325
+    },
+    {
+      "dataset_id": "m50_bits2048",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 50,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 0.416814958,
+      "min_seconds": 0.416500167,
+      "max_seconds": 0.417805125,
+      "stdev_seconds": 0.0005267773124808115
+    },
+    {
+      "dataset_id": "m100_bits2048",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 100,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 1.540518041,
+      "min_seconds": 1.538261541,
+      "max_seconds": 1.545689541,
+      "stdev_seconds": 0.002884660029591902
+    },
+    {
+      "dataset_id": "m100_bits2048",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 100,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 0.888476417,
+      "min_seconds": 0.883545416,
+      "max_seconds": 0.907928875,
+      "stdev_seconds": 0.0099776487745914
+    }
+  ]
+}

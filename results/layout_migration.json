@@ -1,0 +1,270 @@
+{
+  "created_at_utc": "2026-10-28T11:48:27.453908+00:00",
+  "description": "Layout migration only; historical result CSVs/JSONs and dataset bytes remain unchanged",
+  "source_archive": "results/source_archive/pre_consolidation_2026_10_28",
+  "source_mapping": {
+    "key_generation.py": "generators/shared_prime_cases.py (standalone control wrapper now generators/control_cases.py)",
+    "key_dataset.py": "normalization.py",
+    "shared_prime_auditor.py": "audit_pipeline.py",
+    "shared_prime_fixtures.py": "build_dataset.py",
+    "experiment_checks.py": "experiments.py",
+    "plot_results.py": "experiments.py"
+  },
+  "moves": [
+    {
+      "from": "fixtures/scalability_v2/m100_bits2048/public.json",
+      "to": "data/public/scalability_v2/m100_bits2048/public.json",
+      "sha256": "dd54e32fdaba49a792c6f6c2b2da7d789837198628d2c0f34da195eae187b129"
+    },
+    {
+      "from": "fixtures/scalability_v2/m100_bits2048/private_truth.json",
+      "to": "data/private/scalability_v2/m100_bits2048/private_truth.json",
+      "sha256": "1c8d57861fd5a4d2f4978cb147adac417e12fddbcd52c469786d2320feb63df5"
+    },
+    {
+      "from": "fixtures/scalability_v2/m100_bits2048/manifest.json",
+      "to": "data/public/scalability_v2/m100_bits2048/manifest.json",
+      "sha256": "3e931aece416866d81a277d86d0ba9763c80542d8c68de4b16db62700bb2a0c9"
+    },
+    {
+      "from": "fixtures/scalability_v2/m20_bits2048/public.json",
+      "to": "data/public/scalability_v2/m20_bits2048/public.json",
+      "sha256": "bbafabae4ae02d1f335863393f5867322a9655dc9e76d44fca45525a186a83ec"
+    },
+    {
+      "from": "fixtures/scalability_v2/m20_bits2048/private_truth.json",
+      "to": "data/private/scalability_v2/m20_bits2048/private_truth.json",
+      "sha256": "f7ca86ee54c32389653385a28f9c32942aea2055da9fd082496d15e018f9c3f5"
+    },
+    {
+      "from": "fixtures/scalability_v2/m20_bits2048/manifest.json",
+      "to": "data/public/scalability_v2/m20_bits2048/manifest.json",
+      "sha256": "23a3abf399aab22aed05d53ff1d2bf33102b3a96626ecb0b5f090e51a4e1085d"
+    },
+    {
+      "from": "fixtures/scalability_v2/m50_bits2048/public.json",
+      "to": "data/public/scalability_v2/m50_bits2048/public.json",
+      "sha256": "ed813d6a5eff1bff77efad55a9b39754b190726ea9546302c08984263256a9a0"
+    },
+    {
+      "from": "fixtures/scalability_v2/m50_bits2048/private_truth.json",
+      "to": "data/private/scalability_v2/m50_bits2048/private_truth.json",
+      "sha256": "35be0ebca87a8315ee36657057be1c2b973558434f34a19d91b8e2fe61c470f5"
+    },
+    {
+      "from": "fixtures/scalability_v2/m50_bits2048/manifest.json",
+      "to": "data/public/scalability_v2/m50_bits2048/manifest.json",
+      "sha256": "2757275ab609d5157a30bd4b720d2f5c8744d966c833cf7ec646779d13789824"
+    },
+    {
+      "from": "fixtures/van_coverage_v2/after/public.json",
+      "to": "data/public/van_coverage_v2/after/public.json",
+      "sha256": "a5461ffb65e46c427cfe835c17ecf5967a4c26f200ad20c22bd2358f7714a5dd"
+    },
+    {
+      "from": "fixtures/van_coverage_v2/after/private_truth.json",
+      "to": "data/private/van_coverage_v2/after/private_truth.json",
+      "sha256": "af0f0052daf08c723d9d65177e58b07c95a305cb266b98c8e724d9ae45ca3917"
+    },
+    {
+      "from": "fixtures/van_coverage_v2/after/manifest.json",
+      "to": "data/public/van_coverage_v2/after/manifest.json",
+      "sha256": "3ff9c2ec62359f4d8ed1245d6be664b5d3f1c61be1501dcfddb6577c96a9134b"
+    },
+    {
+      "from": "fixtures/van_coverage_v2/before/public.json",
+      "to": "data/public/van_coverage_v2/before/public.json",
+      "sha256": "c4e3651b871fb32fb1b14d6b51c48a51013fec796c5245cc30fda04e679462db"
+    },
+    {
+      "from": "fixtures/van_coverage_v2/before/private_truth.json",
+      "to": "data/private/van_coverage_v2/before/private_truth.json",
+      "sha256": "b371206f91b22557fc8bd6cb40b8dbf3b67049b16113315791d029b821170591"
+    },
+    {
+      "from": "fixtures/van_coverage_v2/before/manifest.json",
+      "to": "data/public/van_coverage_v2/before/manifest.json",
+      "sha256": "235f935710a7145cf1c0722c6136428691496667186e618671ad1a82745b6756"
+    },
+    {
+      "from": "fixtures/van_demo/public.json",
+      "to": "data/public/van_demo/public.json",
+      "sha256": "2b2f0cdec415a25bbb82cd948772b8e2c6ee6965284a886d8508916e7a46abf2"
+    },
+    {
+      "from": "fixtures/van_demo/private_truth.json",
+      "to": "data/private/van_demo/private_truth.json",
+      "sha256": "032afc6028121ca71056c3de298c80fb3bd28250a68ce5ac120a49fde3de0fdb"
+    },
+    {
+      "from": "fixtures/van_mixed_v2/public.json",
+      "to": "data/public/van_mixed_v2/public.json",
+      "sha256": "bb348de1512aff080e293f7c09465a78b87a3900f56448f9932b50b40970b39b"
+    },
+    {
+      "from": "fixtures/van_mixed_v2/private_truth.json",
+      "to": "data/private/van_mixed_v2/private_truth.json",
+      "sha256": "122abb72391fdc8cc3b5bbfd2f551a184ed7e6537f8a364d591cf6ec37e743d5"
+    },
+    {
+      "from": "fixtures/van_mixed_v2/manifest.json",
+      "to": "data/public/van_mixed_v2/manifest.json",
+      "sha256": "044d5260ccff8049153cba649db17a7c9b6a933cc284f502ad8383eac32150d3"
+    },
+    {
+      "from": "fixtures/van_coverage_v2/coverage_result.json",
+      "to": "results/van_batch_coverage_v2/fixture_coverage_result.json",
+      "sha256": "80ac199b81ce24f4e1100cf84b11053abd85b7c6291eb206ac6ac10798b68802"
+    },
+    {
+      "from": "fixtures/README.md",
+      "to": "data/README.md",
+      "sha256": "dd2ddc5b1a2f304a192ea45c95f6097b0abe65587bffcc494e9530cf24567aae",
+      "current_sha256": "1173a117b3ffadcb752dce01e2fad26ff1bfaae2e18e0fd3bd6964482fccab04",
+      "note": "Documentation updated after byte-preserving move; original archived"
+    },
+    {
+      "from": "output/rsa-file-map.html",
+      "to": "results/learning/rsa-file-map.html",
+      "sha256": "ffe2d848b79b1b68c79fb4db4b261ecad8f3de3271e2ab302cc82ce009d138dc"
+    }
+  ],
+  "canonical_format_cleanup": {
+    "completed_at_utc": "2026-10-28T18:00:15.349593+00:00",
+    "description": "One canonical hexadecimal data format; active folder names no longer include version suffixes",
+    "new_benchmarks_run": false,
+    "historical_result_artifacts_preserved": 35,
+    "canonical_formats": [
+      "weak-rsa-public",
+      "weak-rsa-private",
+      "weak-rsa-manifest"
+    ],
+    "datasets": [
+      {
+        "from_public": "data/public/scalability_v2/m100_bits2048/public.json",
+        "to_public": "data/public/scalability/m100_bits2048/public.json",
+        "from_private": "data/private/scalability_v2/m100_bits2048/private_truth.json",
+        "to_private": "data/private/scalability/m100_bits2048/private_truth.json",
+        "previous_public_sha256": "dd54e32fdaba49a792c6f6c2b2da7d789837198628d2c0f34da195eae187b129",
+        "current_public_sha256": "656924eab4d8cef88c95634d2b3784bda19c98e242b81a7a67b8ef1d3a613f5f",
+        "previous_private_sha256": "1c8d57861fd5a4d2f4978cb147adac417e12fddbcd52c469786d2320feb63df5",
+        "current_private_sha256": "f92bbbd90986e978bd514e179beb93a11964fa741231e5e37722aa0909600025",
+        "current_manifest_sha256": "61778e9db74e11fc772a8d88cba85d082f89280d800a1664391d3be2e760d5e7",
+        "decoded_values_verified_unchanged": true
+      },
+      {
+        "from_public": "data/public/scalability_v2/m20_bits2048/public.json",
+        "to_public": "data/public/scalability/m20_bits2048/public.json",
+        "from_private": "data/private/scalability_v2/m20_bits2048/private_truth.json",
+        "to_private": "data/private/scalability/m20_bits2048/private_truth.json",
+        "previous_public_sha256": "bbafabae4ae02d1f335863393f5867322a9655dc9e76d44fca45525a186a83ec",
+        "current_public_sha256": "ee43539614cdd058ae7dc529863155c97af8aa3235eccc7e06c6754ac8058764",
+        "previous_private_sha256": "f7ca86ee54c32389653385a28f9c32942aea2055da9fd082496d15e018f9c3f5",
+        "current_private_sha256": "e72cf21866638af3b0d69bd81fe6b03a64d3c50cdcaa697f5bac0089e068b428",
+        "current_manifest_sha256": "fbc357cfbbde8f2552a88c2cd7f45d5b146ff7a2e457a2c203c017df2248949f",
+        "decoded_values_verified_unchanged": true
+      },
+      {
+        "from_public": "data/public/scalability_v2/m50_bits2048/public.json",
+        "to_public": "data/public/scalability/m50_bits2048/public.json",
+        "from_private": "data/private/scalability_v2/m50_bits2048/private_truth.json",
+        "to_private": "data/private/scalability/m50_bits2048/private_truth.json",
+        "previous_public_sha256": "ed813d6a5eff1bff77efad55a9b39754b190726ea9546302c08984263256a9a0",
+        "current_public_sha256": "5e68340bd99265c424c2a6db793ec913463dd7be585c32e2ccfd7cb14aeff849",
+        "previous_private_sha256": "35be0ebca87a8315ee36657057be1c2b973558434f34a19d91b8e2fe61c470f5",
+        "current_private_sha256": "0f27b66a5e252568301055ac718bcb5eb091c1a4b4e418bfb6e0725a1ba9fc65",
+        "current_manifest_sha256": "a6d655d9fa890758e19faa21d00ef16aa9cabf68bae355df3a4070b2b028af43",
+        "decoded_values_verified_unchanged": true
+      },
+      {
+        "from_public": "data/public/van_coverage_v2/after/public.json",
+        "to_public": "data/public/van_coverage/after/public.json",
+        "from_private": "data/private/van_coverage_v2/after/private_truth.json",
+        "to_private": "data/private/van_coverage/after/private_truth.json",
+        "previous_public_sha256": "a5461ffb65e46c427cfe835c17ecf5967a4c26f200ad20c22bd2358f7714a5dd",
+        "current_public_sha256": "63f2b19ac996ecf120fe0929016dff180ae9664994894f6ec51a2c39b75a57da",
+        "previous_private_sha256": "af0f0052daf08c723d9d65177e58b07c95a305cb266b98c8e724d9ae45ca3917",
+        "current_private_sha256": "2c3631959bcd41b15ead07a38faa3eb92e838d5964db3560907b8396dae1881b",
+        "current_manifest_sha256": "9c672fec0fd27d551907c0e847d2e0d9f30c33898ac10372df9132f6e6286583",
+        "decoded_values_verified_unchanged": true
+      },
+      {
+        "from_public": "data/public/van_coverage_v2/before/public.json",
+        "to_public": "data/public/van_coverage/before/public.json",
+        "from_private": "data/private/van_coverage_v2/before/private_truth.json",
+        "to_private": "data/private/van_coverage/before/private_truth.json",
+        "previous_public_sha256": "c4e3651b871fb32fb1b14d6b51c48a51013fec796c5245cc30fda04e679462db",
+        "current_public_sha256": "2e3da1dab48258959caeff216bbb16a44a8b2ccf3f48adf4e142775b5c139f99",
+        "previous_private_sha256": "b371206f91b22557fc8bd6cb40b8dbf3b67049b16113315791d029b821170591",
+        "current_private_sha256": "d7a042ca095e8a02c09dd949d06426a3315a69fb94f42846bd45dc0e46481f23",
+        "current_manifest_sha256": "b153e6be9c47f928b6563f7739b82b1edc800b51bab5362a17ee52722b8e2d7f",
+        "decoded_values_verified_unchanged": true
+      },
+      {
+        "from_public": "data/public/van_demo/public.json",
+        "to_public": "data/public/van_demo/public.json",
+        "from_private": "data/private/van_demo/private_truth.json",
+        "to_private": "data/private/van_demo/private_truth.json",
+        "previous_public_sha256": "2b2f0cdec415a25bbb82cd948772b8e2c6ee6965284a886d8508916e7a46abf2",
+        "current_public_sha256": "3b25756552159567a6643c84cb901aaf0f837825b02eb85acaf22afc8ef3961e",
+        "previous_private_sha256": "032afc6028121ca71056c3de298c80fb3bd28250a68ce5ac120a49fde3de0fdb",
+        "current_private_sha256": "54d3d337fdf85f9927b5a28d34896e50ab0c4a9ba97c504bdd51b394e7a8ad93",
+        "current_manifest_sha256": "a45a964da5144a6b06eb4c8218e51d3b7ed8052920403ce91a43cf8ee73e9a5b",
+        "decoded_values_verified_unchanged": true
+      },
+      {
+        "from_public": "data/public/van_mixed_v2/public.json",
+        "to_public": "data/public/van_mixed/public.json",
+        "from_private": "data/private/van_mixed_v2/private_truth.json",
+        "to_private": "data/private/van_mixed/private_truth.json",
+        "previous_public_sha256": "bb348de1512aff080e293f7c09465a78b87a3900f56448f9932b50b40970b39b",
+        "current_public_sha256": "129448e8123a316f795ab6ae595c38262dddd756d93f8afaec0d21661c2521b1",
+        "previous_private_sha256": "122abb72391fdc8cc3b5bbfd2f551a184ed7e6537f8a364d591cf6ec37e743d5",
+        "current_private_sha256": "48dd84e16b7d8b1e332a2e616256c2c6be9a832150d8eea0b56878ccac0d1cee",
+        "current_manifest_sha256": "e444c6b58fef71861a87a072a88eee32cf7ccce04fd6492fab5d12e948b15c2a",
+        "decoded_values_verified_unchanged": true
+      }
+    ],
+    "result_directory_moves": [
+      {
+        "from": "results/van_batch_pilot_v2",
+        "to": "results/van_batch_pilot"
+      },
+      {
+        "from": "results/van_batch_stress_v2",
+        "to": "results/van_batch_stress"
+      },
+      {
+        "from": "results/van_batch_correctness_v2",
+        "to": "results/van_batch_correctness"
+      },
+      {
+        "from": "results/van_batch_coverage_v2",
+        "to": "results/van_batch_coverage"
+      }
+    ]
+  },
+  "repository_cleanup": {
+    "completed_at_utc": "2026-10-28T18:53:08.913299+00:00",
+    "reason": "Removed duplicate layout checks and an older coverage demonstration; principal experiment evidence retained",
+    "removed_support_files_sha256": {
+      "results/layout_verification/coverage_results.csv": "c8b7d707603edfacd6da8d1eab73a6f2869a24be5c0c888a9f427606cc5b02e0",
+      "results/layout_verification/coverage_metadata.json": "b14e6c85cfcd3a6c7745c34eb0c33468c7201745b955104eedb96379fc54411a",
+      "results/layout_verification/correctness_metadata.json": "3dfe146aa8d605ed3cf67e72b86b0c031a5d5ea91052470c27942d0e4a86df87",
+      "results/layout_verification/shared_prime_correctness.csv": "7fc280216c8055d9da06e4f789532cd7853826e963dd8f4e211a9c8a4133fdf8",
+      "results/layout_verification/scalability/summary.json": "91a2641698e878bd55b40d6620b671da30336b8e12a5218d784750550d865c19",
+      "results/layout_verification/scalability/memory_results.csv": "cae5f2b28e1e1f7f86263882974f1e636f4b780059d227c4aa2602a2dfebc4e0",
+      "results/layout_verification/scalability/run_metadata.json": "3891f8bcd4ab79c470c1eb9e9684956d0e5970789e55443cc8f11344de9e97b3",
+      "results/layout_verification/scalability/scalability_results.csv": "b0d4e1715d305916c3282bebc80732680a007e9c8de7b59b492013904ecca811",
+      "results/layout_verification/figures/peak_traced_allocations.svg": "20451a422c9961b7e0b0caca036a068269a9411cd733abf160d866410fa3c5e9",
+      "results/layout_verification/figures/gcd_calls_by_unique_moduli.png": "bb034be9f890a939876d7bcfe9530e0417acbcc51c8f32f795f192357f6e869c",
+      "results/layout_verification/figures/runtime_by_unique_moduli.svg": "13096c2d68c59cbd4683faa63563cd09bafca5265740358cb3fbe3c1a23ab7c1",
+      "results/layout_verification/figures/runtime_by_unique_moduli.png": "7f43c5fd57a5d7d56199632c1788232b28f11dfa83ebe81b0eaf9369a55e4cb6",
+      "results/layout_verification/figures/figure_metadata.json": "0095dd1cc50668a473947e8ff2d88ace943e38c8b25c352ab40b436a25ecb259",
+      "results/layout_verification/figures/gcd_calls_by_unique_moduli.svg": "fd28feb6f5d105817b00a87e9607156ec89acae4ebaec93b3b119e83743f516b",
+      "results/layout_verification/figures/peak_traced_allocations.png": "cbb4b19129ba42621374680e3158757bd2acc714920ab8efa2c4faa33f908df6",
+      "results/van_batch_coverage/fixture_coverage_result.json": "80ac199b81ce24f4e1100cf84b11053abd85b7c6291eb206ac6ac10798b68802"
+    },
+    "principal_measurements_changed": false
+  }
+}
