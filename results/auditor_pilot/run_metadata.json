@@ -1,0 +1,62 @@
+{
+  "format": "weak-rsa-three-mode-comparison",
+  "run_id": "20261103T185728Z_7ed2a025",
+  "created_at_utc": "2026-11-03T18:57:41.279901+00:00",
+  "python_version": "3.9.6",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "pycryptodome_version": "3.24.1",
+  "git": {
+    "revision": "49b006b380c2c801617815f520017b454471d011",
+    "dirty": false
+  },
+  "source_sha256": {
+    "compare_modes.py": "753470e754139c799f43ee5be4e21f5f1f1f33f4057d688f4b1fa9c7be98381b",
+    "evaluation.py": "07cb6bacb03002f755f6f9eebc1d6db2a02930a497252ce9e79df1b5f45dc318",
+    "audit_pipeline.py": "a118457c4ab417d399eaa835463a374e6f98a3941d672d6fb942c20e796f7694",
+    "fermat_attack.py": "96c630b453fdde36292f7b1fc62371064ca8654e301cac30e4aa765e11a93fff",
+    "fermat_adapter.py": "3e1156834110f453851cd9c12507c4a5b84a3f1024148a9ba64a1675bb49cc99",
+    "shared_prime_attack.py": "10016007a6cc77a79c6361627b0da4f21de6156e370d98fc8e4c50864ed794ce",
+    "batch_gcd_attack.py": "61aa3094245794bf144ed98d7ca701f58968e276aed7a42df8651ce33c56b630",
+    "normalization.py": "750de64dda240e39f5ffeb4fad52b1900b70d84c5811d3f0840941916fd61827",
+    "key_recovery.py": "67a708261e0319db4f718ef424571a6a0de9d70054bf193a3274928a13e25b8a",
+    "contracts.py": "0931ffd63c07f1c4e40d283f050391986a3b6d227dcd97ba58a84f15f6458195",
+    "build_dataset.py": "c9c6589cd55e0e6f1afa3cb6f64544d16a33a78c9cfeb7e8e5697c521b02b2ce",
+    "dataset_io.py": "c993491887a92ae5504b6e669db18c85a87a5181743120d8666fc3097338eb8b",
+    "generators/shared_prime_cases.py": "fc7079d9a409e2dce1447947aeb07656b2fa19357e552fc23927714107c19c4b",
+    "generators/close_prime_cases.py": "4fbd67a6f4c23cc368d3c1e4de0fa1b1f28701db3e9ac99758727e00d5d6019e",
+    "generators/control_cases.py": "7342d827a74ae573888e65f1a1454ba99d54c0143abfbcb8a6ac7973f1e44ef3"
+  },
+  "dataset_directory": "/Users/van_flora/Desktop/SC4010-WeakRSA/data/public/auditor_demo",
+  "public_sha256": "e36ae33a7927f3f2993b01cf8508760e2ddc6cdc46221e6babb80346164ed695",
+  "private_truth_sha256": "1f93c55840d423de16cdfd72dbe2644231944a3f1bfb5273bb700db1cc5e27b4",
+  "manifest_sha256": "08df286ff8146c386d4dbfa7ef26fb1a09200bd8fe0542a56173892d451217b9",
+  "modulus_bit_lengths": [
+    2048
+  ],
+  "gcd_backend": "batch",
+  "budgets": [
+    16,
+    256
+  ],
+  "trials": 5,
+  "warmups": 0,
+  "mode_order": "rotate gcd/fermat/combined by budget index plus trial index",
+  "fresh_state": "new public-record copy and independent auditor call for every mode/budget/trial; no recovered-factor cache",
+  "timing_clock": "auditor perf_counter_ns",
+  "timing_boundary": "complete selected scan work including GCD trees/fallback, Fermat calls and common factor validation",
+  "per_modulus_fermat_timing_boundary": "individual Fermat adapter call; common factor validation is included in aggregate scan time",
+  "excluded_from_timing": [
+    "generation",
+    "fixture I/O",
+    "normalization",
+    "record mapping",
+    "private truth/reference construction",
+    "recovery/OAEP",
+    "evaluation",
+    "reporting",
+    "plotting"
+  ],
+  "reference": "distinct-modulus prime ownership for GCD; exact (p+q)/2 minus ceil(sqrt(n)) plus one for Fermat",
+  "gap_budget_csv": "evaluator-only private gaps; budget-exhausted rows are failures to recover within budget, not factorisations at the cap",
+  "memory_measurement": "not measured by this comparison runner"
+}
