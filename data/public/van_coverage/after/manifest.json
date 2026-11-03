@@ -1,0 +1,21 @@
+{
+  "format": "weak-rsa-manifest",
+  "public_format": "weak-rsa-public",
+  "private_format": "weak-rsa-private",
+  "public_sha256": "63f2b19ac996ecf120fe0929016dff180ae9664994894f6ec51a2c39b75a57da",
+  "private_sha256": "2c3631959bcd41b15ead07a38faa3eb92e838d5964db3560907b8396dae1881b",
+  "num_records": 4,
+  "num_unique_moduli": 4,
+  "duplicate_extra_records": 0,
+  "modulus_bit_lengths": [
+    2048
+  ],
+  "python_version": "3.9.6",
+  "pycryptodome_version": "3.24.1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "created_at_utc": "2026-10-28T10:51:42+00:00",
+  "construction_metadata": {
+    "profile": "coverage_after",
+    "target_key_id": "key_001"
+  }
+}

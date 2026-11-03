@@ -1,0 +1,64 @@
+{
+  "run_id": "20261028T113531Z_fa4bd896",
+  "created_at_utc": "2026-10-28T11:35:45.760174+00:00",
+  "python_version": "3.9.6",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "pycryptodome_version": "3.24.1",
+  "source_sha256": {
+    "experiments.py": "acfe7242724a55cb18fcd7d464e661df424dac245504cdd6d00d854e1c7462d8",
+    "shared_prime_attack.py": "5dc164de57bdfa3c6828742f1626c7753afeb3da806d448fefe8427fc9a8639b",
+    "batch_gcd_attack.py": "57beb9d09d0ff0e1b7ae3a7fb18a04448a7e311c080c21d1a1d22ef5edd1b2df",
+    "key_dataset.py": "f0ca53a30d748d12a33d0b885258d25873636b4bfc7a401f7ab7d455947c01b2",
+    "key_generation.py": "a414e0655951101801383def8bfc3d2ebd9e87cb302a75a22e66fd8f8a28f091",
+    "shared_prime_fixtures.py": "bb6ee65820057f71d99626cac31cea6fbdcabb273ce627455021282c65bafb6d"
+  },
+  "git": {
+    "revision": "9e3ac0f6e226701f775b67e644f8f26d1f89c55f",
+    "dirty": true
+  },
+  "gcd_backend": "euclidean",
+  "trials": 5,
+  "warmups": 1,
+  "algorithm_order": "pairwise then batch on even trial index; reversed on odd index",
+  "timing_clock": "perf_counter_ns",
+  "timing_boundary": "complete scanner call, including batch trees and fallback",
+  "gcd_call_tracking": "same counted wrapper around the selected backend for both algorithms",
+  "excluded_from_timing": [
+    "generation",
+    "fixture I/O",
+    "normalization",
+    "truth verification",
+    "OAEP",
+    "reporting"
+  ],
+  "memory_measurement": "separate tracemalloc pass; peak traced Python allocations; inputs preloaded; includes scanner trees/output; not RSS",
+  "measure_memory": true,
+  "warmup_results": [
+    {
+      "dataset_id": "van_mixed_v2",
+      "warmup_index": 0,
+      "algorithm": "pairwise",
+      "error": null,
+      "agrees_with_reference": true
+    },
+    {
+      "dataset_id": "van_mixed_v2",
+      "warmup_index": 0,
+      "algorithm": "batch_with_fallback",
+      "error": null,
+      "agrees_with_reference": true
+    }
+  ],
+  "datasets": [
+    {
+      "dataset_id": "van_mixed_v2",
+      "directory": "/Users/van_flora/Desktop/SC4010-WeakRSA/fixtures/van_mixed_v2",
+      "public_sha256": "bb348de1512aff080e293f7c09465a78b87a3900f56448f9932b50b40970b39b",
+      "num_unique_moduli": 16,
+      "modulus_bit_lengths": [
+        2048
+      ],
+      "topology_profile": "custom"
+    }
+  ]
+}

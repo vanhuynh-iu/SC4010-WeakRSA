@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# GCD workspace settings and historical local files
+*.py[cod]
+.venv/
+.env.*
+!.env.example
+.codex/
+.agents/
+.cache/
+.DS_Store
+.idea/
+.vscode/
+/results/source_archive/
+/results/learning/
