@@ -15,6 +15,21 @@ def _require_integer(value: int, name: str) -> None:
         raise TypeError(f"{name} must be an integer")
 
 
+def validate_factors(n: int, p: int, q: int) -> tuple[int, int]:
+    """Return sorted, distinct odd prime factors after checking the public n."""
+    for name, value in (("n", n), ("p", p), ("q", q)):
+        _require_integer(value, name)
+    if n <= 1 or n % 2 == 0:
+        raise ValueError("n must be an odd integer greater than one")
+    if p <= 2 or q <= 2 or p % 2 == 0 or q % 2 == 0 or p == q:
+        raise ValueError("factors must be distinct odd primes")
+    if p * q != n:
+        raise ValueError("recovered factors do not multiply to public modulus n")
+    if not isPrime(p) or not isPrime(q):
+        raise ValueError("recovered factors must be prime")
+    return tuple(sorted((p, q)))
+
+
 def extended_gcd(a: int, b: int) -> tuple[int, int, int]:
     """Return (g, x, y) with a*x + b*y = g = gcd(a, b).
 

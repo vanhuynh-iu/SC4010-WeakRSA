@@ -181,7 +181,7 @@ class AuditReport(ScanResult):
 
     recovered_keys aliases recovered_records; gcd_comparisons aliases gcd_calls.
     scan_seconds excludes preprocessing, propagation, generation, I/O, recovery
-    and OAEP. Fermat/combined reports are a later integration step.
+    and OAEP. run_audit uses IntegratedAuditReport for the three-mode system.
     """
 
     normalized: NormalizedKeySet
@@ -196,7 +196,7 @@ class AuditReport(ScanResult):
     gcd_comparisons: int
 
 
-# Krystal's part.
+# Common result for the adapter to Krystal's Fermat implementation.
 class FermatResult(TypedDict):
     status: FermatStatus
     factors: Optional[FactorPair]
@@ -206,3 +206,57 @@ class FermatResult(TypedDict):
 class FermatFactorizer(Protocol):
     def __call__(self, n: int, max_candidates: int) -> FermatResult:
         ...
+
+
+# Integrated auditor contracts; the original GCD interfaces remain compatible.
+AuditMode = Literal["gcd", "fermat", "combined"]
+AuditorMethod = Literal["pairwise", "batch_direct", "batch_fallback", "fermat"]
+GCDCheckStatus = Literal["factored", "no_shared_factor_in_dataset", "unresolved_full_gcd", "not_run"]
+FermatCheckStatus = Literal["factored", "budget_exhausted", "not_run"]
+
+
+class AuditorFinding(TypedDict):
+    """One unique modulus, including separate outcomes for each check.
+
+    A combined GCD success leaves Fermat not_run. Exhaustion is a search limit,
+    not evidence of security. Times cover actual adapter calls, not decryption.
+    """
+
+    n: int
+    status: Union[FindingStatus, Literal["budget_exhausted"]]
+    p: Optional[int]
+    q: Optional[int]
+    resolution_method: Optional[AuditorMethod]
+    gcd_status: GCDCheckStatus
+    fermat_status: FermatCheckStatus
+    fermat_candidate_tests: int
+    fermat_scan_seconds: float
+
+
+class IntegratedAuditReport(TypedDict):
+    """Public-only result shared by all three modes, before recovery/evaluation."""
+
+    mode: AuditMode
+    gcd_backend: str
+    fermat_budget: int
+    findings: Dict[int, AuditorFinding]
+    normalized: NormalizedKeySet
+    record_findings: List[dict]
+    recovered_records: List[dict]
+    recovered_keys: List[dict]
+    num_records: int
+    num_unique_moduli: int
+    duplicate_extra_records: int
+    preprocessing_seconds: float
+    scan_seconds: float
+    gcd_scan_seconds: float
+    fermat_scan_seconds: float
+    gcd_calls: int
+    pairwise_gcd_calls: int
+    batch_leaf_gcd_calls: int
+    fallback_gcd_calls: int
+    full_gcd_before_fallback: int
+    unresolved_after_fallback: int
+    fermat_candidate_tests: int
+    fermat_attempted_moduli: int
+    fermat_exhausted_moduli: int

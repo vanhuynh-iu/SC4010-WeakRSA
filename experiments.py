@@ -856,7 +856,11 @@ def generate_figures(results_directory, output_directory=None, overwrite=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("scalability", "correctness", "coverage", "plot"), default="scalability")
+    parser.add_argument("--mode", choices=("scalability", "correctness", "coverage", "plot", "compare"), default="scalability")
+    parser.add_argument("--dataset", default="data/public/auditor_demo", help="saved public fixture for compare mode")
+    parser.add_argument("--private-directory", help="optional evaluator truth directory for compare mode")
+    parser.add_argument("--budgets", nargs="+", type=int, default=[16, 256], help="per-modulus Fermat budgets for compare mode")
+    parser.add_argument("--gcd-backend", choices=("pairwise", "batch"), default="batch", help="GCD scanner for compare mode")
     parser.add_argument("--dataset-dirs", nargs="+", default=["data/public/van_mixed"])
     parser.add_argument("--before", default="data/public/van_coverage/before")
     parser.add_argument("--after", default="data/public/van_coverage/after")
@@ -874,7 +878,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.mode == "plot" and args.input is None:
         parser.error("--input RESULTS_DIR is required for --mode plot")
-    output = args.output or "results/van_batch_pilot"
+    output = args.output or ("results/auditor_comparison" if args.mode == "compare" else "results/van_batch_pilot")
     try:
         if args.mode == "plot":
             metadata = generate_figures(args.input, args.output, args.overwrite_figures)
@@ -886,7 +890,11 @@ def main(argv=None):
                 for path in chart["paths"]:
                     print(path)
             return 0
-        if args.mode == "correctness":
+        if args.mode == "compare":
+            from compare_modes import run_mode_comparison
+            summary = run_mode_comparison(args.dataset, output, args.budgets, args.trials,
+                                          args.gcd_backend, args.private_directory)
+        elif args.mode == "correctness":
             summary = run_shared_prime_correctness(args.dataset_dirs, output)
         elif args.mode == "coverage":
             summary = run_coverage_experiment(args.before, args.after, args.target_key_id, output)
