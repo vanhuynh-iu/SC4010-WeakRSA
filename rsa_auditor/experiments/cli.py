@@ -13,10 +13,14 @@ from .plots import generate_figures
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("scalability", "correctness", "coverage", "plot", "compare"), default="scalability")
+    parser.add_argument("--mode", choices=("scalability", "stress", "correctness", "coverage", "plot", "compare", "fermat-pilot"), default="scalability")
     parser.add_argument("--dataset", default="data/public/auditor_demo", help="saved public fixture for compare mode")
     parser.add_argument("--private-directory", help="optional evaluator truth directory for compare mode")
-    parser.add_argument("--budgets", nargs="+", type=int, default=[16, 256], help="per-modulus Fermat budgets for compare mode")
+    parser.add_argument("--budgets", nargs="+", type=int,
+                        help="Fermat budgets: default 16/65536 for fermat-pilot, 16/256 for compare")
+    parser.add_argument("--fermat-dataset", default="data/public/fermat_pilot", help="saved paired Fermat fixture")
+    parser.add_argument("--gap-bits", nargs="+", type=int, default=[515, 518, 520])
+    parser.add_argument("--keys-per-gap", type=int, default=3)
     parser.add_argument("--gcd-backend", choices=("pairwise", "batch"), default="batch", help="GCD scanner for compare mode")
     parser.add_argument("--dataset-dirs", nargs="+", default=["data/public/van_mixed"])
     parser.add_argument("--before", default="data/public/van_coverage/before")
@@ -33,9 +37,14 @@ def main(argv=None):
     parser.add_argument("--skip-memory", action="store_true")
     parser.add_argument("--backend", choices=("euclidean", "math"), default="euclidean")
     args = parser.parse_args(argv)
+    if args.budgets is None:
+        args.budgets = [16, 65536] if args.mode == "fermat-pilot" else [16, 256]
     if args.mode == "plot" and args.input is None:
         parser.error("--input RESULTS_DIR is required for --mode plot")
-    output = args.output or ("results/auditor_comparison" if args.mode == "compare" else "results/van_batch_pilot")
+    defaults = {"compare": "results/comparison", "correctness": "results/gcd/correctness",
+                "coverage": "results/gcd/coverage", "scalability": "results/gcd/scalability",
+                "stress": "results/gcd/stress", "fermat-pilot": "results/fermat"}
+    output = args.output or defaults.get(args.mode)
     try:
         if args.mode == "plot":
             metadata = generate_figures(args.input, args.output, args.overwrite_figures)
@@ -47,7 +56,11 @@ def main(argv=None):
                 for path in chart["paths"]:
                     print(path)
             return 0
-        if args.mode == "compare":
+        if args.mode == "fermat-pilot":
+            from .fermat_pilot import prepare_fermat_dataset, run_fermat_pilot
+            prepare_fermat_dataset(args.fermat_dataset, args.gap_bits, args.keys_per_gap, args.bits)
+            summary = run_fermat_pilot(args.fermat_dataset, output, args.budgets)
+        elif args.mode == "compare":
             from .comparison import run_mode_comparison
             summary = run_mode_comparison(args.dataset, output, args.budgets, args.trials,
                                           args.gcd_backend, args.private_directory)
@@ -55,6 +68,9 @@ def main(argv=None):
             summary = run_shared_prime_correctness(args.dataset_dirs, output)
         elif args.mode == "coverage":
             summary = run_coverage_experiment(args.before, args.after, args.target_key_id, output)
+        elif args.mode == "stress":
+            summary = run_scalability_experiment(args.dataset_dirs, output, args.trials, args.warmups,
+                                                 args.backend, not args.skip_memory)
         else:
             directories = prepare_scalability_datasets(args.sizes, args.dataset_root, args.bits)
             summary = run_scalability_experiment(directories, output, args.trials, args.warmups,

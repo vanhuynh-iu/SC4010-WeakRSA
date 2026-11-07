@@ -30,3 +30,20 @@ before continuing. If the repository requires a pull request, use rsa-auditor
 as the source branch and main as the destination.
 
 These are publishing instructions only. The cleanup task did not execute them.
+
+## Old work is retained in history
+
+Advancing main with the commands above keeps earlier commits. Removing an old
+file from the current snapshot does not remove its earlier versions. Van's
+original GCD findings remain on gcd at 2660d26, and Krystal's standalone work
+remains on close-primes at bd60ccb. Before the results refresh, previously
+uncommitted archive files were captured byte-for-byte in commit 481dbaa. That
+commit is also in rsa-auditor's ancestry, so a normal main push preserves it.
+
+For example, view an old result without changing branches:
+
+```bash
+git show gcd:results/van_batch_pilot/summary.json
+git show close-primes:results/sieve_comparison_summary_2048.csv
+git show 481dbaa:results/source_archive/pre_consolidation_2026_10_28/README.md
+```
