@@ -4,7 +4,7 @@ from math import gcd
 from typing import Optional
 
 from ...records import GeneratedKeyCase
-from legacy.close_primes.key_generation import generate_close_prime_key as _generate_close_prime_key
+from .close_primes_original import generate_close_prime_key as _generate_close_prime_key
 from ...key_recovery import validate_factors
 
 

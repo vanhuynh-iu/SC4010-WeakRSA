@@ -49,6 +49,6 @@ have not been measured. No universal speedup or security claim follows.
 To repeat without overwriting these results:
 
 ```bash
-python experiments.py --mode scalability --sizes 20 50 100 --bits 2048 --trials 5 --warmups 1 --backend euclidean --dataset-root data/public/scalability --output results/my_new_pilot
-python experiments.py --mode plot --input results/my_new_pilot
+python -m rsa_auditor.experiments --mode scalability --sizes 20 50 100 --bits 2048 --trials 5 --warmups 1 --backend euclidean --dataset-root data/public/scalability --output results/my_new_pilot
+python -m rsa_auditor.experiments --mode plot --input results/my_new_pilot
 ```

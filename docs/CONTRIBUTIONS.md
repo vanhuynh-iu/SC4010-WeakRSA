@@ -63,3 +63,21 @@ from the public pipeline module. Clearer names include records, public_inputs,
 pairwise_gcd, batch_gcd and shared_primes. Existing algorithm bodies, record
 formats and historical measurements were preserved; imports and test patch
 locations were updated. CODE_GUIDE.md explains the private answer sheet.
+
+## Remove unused working-tree copies — 8 November 2026
+
+At Van's request, Codex removed unused standalone demo/experiment/plotting and
+Docker copies from this integrated branch, plus the empty test placeholder.
+The complete originals remain in close-primes at bd60ccb and gcd at 2660d26,
+and in earlier commits. The reused original Fermat and key-generation files
+were moved byte-for-byte into attacks/fermat_original.py and
+datasets/generators/close_primes_original.py. Their recorded outputs moved
+unchanged into results/close_primes. Historical runner reproduction uses the
+original branch/revision; it is not a feature of the integrated experiment CLI.
+
+Root launcher files were replaced by standard package __main__.py entrypoints,
+so all application code is inside rsa_auditor. Core requirements now contain
+PyCryptodome and Matplotlib; optional dependencies for removed historical scripts
+were dropped. Existing tests and all measured data were retained. Original
+branches, ignored user history and the working Python environment were preserved.
+Earlier sections and migration maps describe the layouts at their stated dates.

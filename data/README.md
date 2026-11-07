@@ -15,7 +15,7 @@ Matching `private/<name>/private_truth.json` stores p, q, labels and optional
 expected messages or actual prime gaps. Assembly and evaluation use truth;
 attacks receive public records only.
 
-Use `build_dataset.py` for storage. Integers are saved as hexadecimal strings
+Use `python -m rsa_auditor.datasets` to build and save collections. Integers are saved as hexadecimal strings
 and bytes as hex; the loader returns Python integers and bytes. All keys are
 synthetic. The mixed case deliberately includes one record with e=3 to test
 recovery for the same modulus with different exponents.

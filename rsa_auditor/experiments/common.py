@@ -150,8 +150,6 @@ def _code_metadata():
     """Fingerprint current source paths without rewriting historical run metadata."""
     root = Path(__file__).resolve().parents[2]
     paths = sorted((root / "rsa_auditor").rglob("*.py"))
-    paths.extend(root / name for name in ("legacy/close_primes/fermat_attack.py",
-                                         "legacy/close_primes/key_generation.py"))
     hashes = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in paths if path.is_file()}
     git = {"revision": None, "dirty": None}

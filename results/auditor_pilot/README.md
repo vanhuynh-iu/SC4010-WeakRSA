@@ -30,7 +30,7 @@ Files:
 To repeat with new output files:
 
 ```bash
-python experiments.py --mode compare --dataset data/public/auditor_demo --budgets 16 256 --trials 5 --output results/my_comparison
+python -m rsa_auditor.experiments --mode compare --dataset data/public/auditor_demo --budgets 16 256 --trials 5 --output results/my_comparison
 ```
 
 Existing results are protected from overwrite. Original GCD and close-prime results elsewhere in `results/` are unchanged.

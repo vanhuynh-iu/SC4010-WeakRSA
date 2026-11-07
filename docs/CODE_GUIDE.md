@@ -1,8 +1,16 @@
 # Reading the auditor code
 
-Start with the three root commands: `demo.py`, `build_dataset.py` and
-`experiments.py`. Each launches a clearly named module; the root files contain
-no attack mathematics.
+Start with the package commands. All program code is inside `rsa_auditor/`:
+
+```bash
+python -m rsa_auditor               # audit command; add mode/options
+python -m rsa_auditor.datasets     # dataset-building command; add options
+python -m rsa_auditor.experiments  # comparison/benchmark command; add options
+```
+
+Each package's `__main__.py` launches its `cli.py`. `__init__.py` marks a Python
+package; these are small infrastructure files rather than duplicate programs.
+The outer project folder holds the application plus data, findings and tests.
 
 ## Public work and the private answer sheet
 
@@ -78,10 +86,20 @@ handling. The generator filenames describe what they create: `shared_primes`,
 `close_primes` and `controls`. Stored inputs and reported result formats remain
 the same as before this refactor.
 
-Original close-prime scripts and findings remain in `legacy/close_primes/`.
-Their algorithm bodies were not rewritten. `legacy/gcd_demo.py` retains the
-original GCD demonstration with updated imports.
+The integrated program reuses two unchanged original files:
+`attacks/fermat_original.py` and
+`datasets/generators/close_primes_original.py`. Their small adapters supply the
+shared input/budget/result contracts. The original Fermat file includes the
+baseline and optimized variants; the integrated budgeted path uses the baseline.
 
-Historical measurement files keep their original code revision/hashes.
-`layout-migration.json` records the first cleanup and `component-migration.json`
-records this component split; they do not relabel old timings as new runs.
+Historical standalone scripts were removed from this branch's working tree
+because the integrated auditor does not use them. The full source remains on
+`close-primes` at immutable commit `bd60ccb` and `gcd` at `2660d26`; Git history
+also retains every removed copy. Their measured close-prime outputs are in
+`results/close_primes/`. The current shared runner does not regenerate those
+standalone studies. New runs of cryptographic generators do not reproduce the
+same primes merely by reusing a shuffle seed.
+
+Historical measurement files keep their original code revision and hashes.
+The migration JSONs document past layouts at their recorded commits, rather
+than claiming that all historical paths still exist in the current tree.

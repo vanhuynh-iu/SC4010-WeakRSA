@@ -3,7 +3,7 @@
 from math import isqrt
 
 from ..records import FermatResult
-from legacy.close_primes.fermat_attack import fermat_attack
+from .fermat_original import fermat_attack
 from ..key_recovery import validate_factors
 
 
