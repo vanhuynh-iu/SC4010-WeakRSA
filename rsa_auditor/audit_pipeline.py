@@ -6,11 +6,11 @@ Only evaluate_scan accepts private truth; generation and storage stay separate.
 from time import perf_counter_ns
 from typing import Iterable, Optional
 
-from contracts import AuditReport, GCDAlgorithmInput, GCDBackend, PublicKeyRecord, IntegratedAuditReport, SCAN_COUNTERS
-from key_recovery import decrypt_with_recovered_key, validate_factors
-from normalization import normalize_public_keys
-from shared_prime_attack import scan_moduli
-from fermat_adapter import fermat_factor
+from .contracts import AuditReport, GCDAlgorithmInput, GCDBackend, PublicKeyRecord, IntegratedAuditReport, SCAN_COUNTERS
+from .key_recovery import decrypt_with_recovered_key, validate_factors
+from .normalization import normalize_public_keys
+from .shared_prime_attack import scan_moduli
+from .fermat_adapter import fermat_factor
 
 
 
@@ -27,7 +27,7 @@ def audit_public_keys(public_records: Iterable[PublicKeyRecord],
     if algorithm not in ("pairwise", "batch_with_fallback", "batch_raw"):
         raise ValueError("unknown audit algorithm")
     if algorithm != "pairwise":
-        from batch_gcd_attack import scan_moduli_batch
+        from .batch_gcd_attack import scan_moduli_batch
 
     start = perf_counter_ns()
     normalized = normalize_public_keys(public_records)
@@ -112,7 +112,7 @@ def run_audit(public_records, mode="combined", gcd_backend="batch",
         if gcd_backend == "pairwise":
             gcd_result = scan_moduli(moduli, gcd_fn=gcd_fn)
         else:
-            from batch_gcd_attack import scan_moduli_batch
+            from .batch_gcd_attack import scan_moduli_batch
             gcd_result = scan_moduli_batch(moduli, gcd_fn=gcd_fn, resolve_full_gcd=True)
         gcd_seconds = (perf_counter_ns() - start) / 1_000_000_000
         counts.update({name: gcd_result[name] for name in SCAN_COUNTERS})

@@ -1,0 +1,1 @@
+"""Preserved standalone project code."""

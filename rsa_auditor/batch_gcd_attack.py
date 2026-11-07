@@ -7,8 +7,8 @@ Only distinct public moduli enter; candidate primality uses PyCryptodome.
 
 from Crypto.Util.number import isPrime
 
-from contracts import ScanResult
-import shared_prime_attack
+from .contracts import ScanResult
+from . import shared_prime_attack
 
 
 _MAX_DEBUG_WITNESSES = 20

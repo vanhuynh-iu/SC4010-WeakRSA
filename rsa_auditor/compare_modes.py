@@ -20,10 +20,10 @@ import uuid
 
 import Crypto
 
-import audit_pipeline
-from build_dataset import dataset_paths, load_dataset
-from contracts import SCAN_COUNTERS
-from evaluation import MODES, build_reference, evaluate_audit, expected_moduli
+from . import audit_pipeline
+from .build_dataset import dataset_paths, load_dataset
+from .contracts import SCAN_COUNTERS
+from .evaluation import MODES, build_reference, evaluate_audit, expected_moduli
 
 
 OUTPUT_NAMES = ("mode_comparison.csv", "fermat_gap_budget.csv", "summary.json", "run_metadata.json")
@@ -72,11 +72,15 @@ def _csv_text(rows, fields):
 
 
 def _source_metadata():
-    root = Path(__file__).resolve().parent
-    names = ("compare_modes.py", "evaluation.py", "audit_pipeline.py", "fermat_attack.py", "fermat_adapter.py",
-             "shared_prime_attack.py", "batch_gcd_attack.py", "normalization.py",
-             "key_recovery.py", "contracts.py", "build_dataset.py", "dataset_io.py",
-             "generators/shared_prime_cases.py", "generators/close_prime_cases.py", "generators/control_cases.py")
+    root = Path(__file__).resolve().parents[1]
+    names = ("rsa_auditor/compare_modes.py", "rsa_auditor/evaluation.py",
+             "rsa_auditor/audit_pipeline.py", "legacy/close_primes/fermat_attack.py",
+             "rsa_auditor/fermat_adapter.py", "rsa_auditor/shared_prime_attack.py",
+             "rsa_auditor/batch_gcd_attack.py", "rsa_auditor/normalization.py",
+             "rsa_auditor/key_recovery.py", "rsa_auditor/contracts.py",
+             "rsa_auditor/build_dataset.py", "rsa_auditor/dataset_io.py",
+             "rsa_auditor/generators/shared_prime_cases.py", "rsa_auditor/generators/close_prime_cases.py",
+             "rsa_auditor/generators/control_cases.py")
     revision, dirty = None, None
     try:
         revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True,

@@ -11,12 +11,12 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-import build_dataset
-import dataset_io
-from build_dataset import generate_auditor_dataset
-from generators.close_prime_cases import generate_close_prime_key
-from generators.shared_prime_cases import generate_shared_prime_keys
-from normalization import normalize_public_keys
+from rsa_auditor import build_dataset
+from rsa_auditor import dataset_io
+from rsa_auditor.build_dataset import generate_auditor_dataset
+from rsa_auditor.generators.close_prime_cases import generate_close_prime_key
+from rsa_auditor.generators.shared_prime_cases import generate_shared_prime_keys
+from rsa_auditor.normalization import normalize_public_keys
 
 
 class AuditorDatasetTests(unittest.TestCase):
@@ -37,8 +37,8 @@ class AuditorDatasetTests(unittest.TestCase):
                     break
 
     def generate_fixed(self, **kwargs):
-        with patch("generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
-             patch("generators.close_prime_cases.generate_close_prime_key", side_effect=deepcopy(self.close_cases)):
+        with patch("rsa_auditor.generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
+             patch("rsa_auditor.generators.close_prime_cases.generate_close_prime_key", side_effect=deepcopy(self.close_cases)):
             return generate_auditor_dataset(64, **kwargs)
 
     def test_default_composition_has_only_intended_shared_factors(self):
@@ -93,16 +93,16 @@ class AuditorDatasetTests(unittest.TestCase):
 
     def test_accidental_cross_source_sharing_is_retried(self):
         cases = [self.collision()] + deepcopy(self.close_cases)
-        with patch("generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
-             patch("generators.close_prime_cases.generate_close_prime_key", side_effect=cases) as close:
+        with patch("rsa_auditor.generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
+             patch("rsa_auditor.generators.close_prime_cases.generate_close_prime_key", side_effect=cases) as close:
             case = generate_auditor_dataset(64)
         self.assertEqual(close.call_count, 4)
         self.assertEqual(len({record["n"] for record in case["public_keys"]}), 7)
 
     def test_repeated_collisions_fail_with_a_bounded_retry_count(self):
-        with patch("generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
-             patch("generators.close_prime_cases.generate_close_prime_key", return_value=self.collision()) as close, \
-             patch("build_dataset._MAX_AUDITOR_CASE_ATTEMPTS", 3):
+        with patch("rsa_auditor.generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
+             patch("rsa_auditor.generators.close_prime_cases.generate_close_prime_key", return_value=self.collision()) as close, \
+             patch("rsa_auditor.build_dataset._MAX_AUDITOR_CASE_ATTEMPTS", 3):
             with self.assertRaisesRegex(RuntimeError, "within 3 attempts"):
                 generate_auditor_dataset(64)
         self.assertEqual(close.call_count, 3)
@@ -110,8 +110,8 @@ class AuditorDatasetTests(unittest.TestCase):
     def test_wrong_modulus_length_is_not_silently_accepted(self):
         malformed = {"public_key": {"key_id": "local", "n": 65537 * 65539, "e": 65537},
                      "private_truth": {"p": 65537, "q": 65539, "case_type": "close_prime"}}
-        with patch("generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
-             patch("generators.close_prime_cases.generate_close_prime_key", return_value=malformed):
+        with patch("rsa_auditor.generators.shared_prime_cases.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
+             patch("rsa_auditor.generators.close_prime_cases.generate_close_prime_key", return_value=malformed):
             with self.assertRaisesRegex(ValueError, "incompatible RSA parameters"):
                 generate_auditor_dataset(64)
 
@@ -122,7 +122,7 @@ class AuditorDatasetTests(unittest.TestCase):
             {"duplicate_indices": (True,)}, {"duplicate_indices": (-1,)},
             {"duplicate_indices": (7,)},
         )
-        with patch("generators.shared_prime_cases.generate_shared_prime_keys") as generate:
+        with patch("rsa_auditor.generators.shared_prime_cases.generate_shared_prime_keys") as generate:
             for options in attempts:
                 with self.subTest(options=options), self.assertRaises((TypeError, ValueError)):
                     generate_auditor_dataset(**options)

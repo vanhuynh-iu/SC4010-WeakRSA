@@ -8,10 +8,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from audit_pipeline import run_audit
-from shared_prime_attack import scan_moduli
-from audit_pipeline import recover_messages
-from dataset_io import load_dataset
+from rsa_auditor.audit_pipeline import run_audit
+from rsa_auditor.shared_prime_attack import scan_moduli
+from rsa_auditor.audit_pipeline import recover_messages
+from rsa_auditor.dataset_io import load_dataset
 
 
 def records():
@@ -45,11 +45,11 @@ class IntegratedModeTests(unittest.TestCase):
 
     def test_gcd_success_skips_fermat_and_fermat_only_never_scans_gcd(self):
         keys = records()[:2]
-        with patch("audit_pipeline.fermat_factor", side_effect=AssertionError("must skip")):
+        with patch("rsa_auditor.audit_pipeline.fermat_factor", side_effect=AssertionError("must skip")):
             result = run_audit(keys, "combined", "batch", 3)
         self.assertEqual(result["fermat_candidate_tests"], 0)
         self.assertTrue(all(f["fermat_status"] == "not_run" for f in result["findings"].values()))
-        with patch("audit_pipeline.scan_moduli", side_effect=AssertionError("must skip")):
+        with patch("rsa_auditor.audit_pipeline.scan_moduli", side_effect=AssertionError("must skip")):
             result = run_audit(keys, "fermat", "pairwise", 3)
         self.assertEqual(result["gcd_calls"], 0)
         self.assertTrue(all(f["gcd_status"] == "not_run" for f in result["findings"].values()))
@@ -107,7 +107,7 @@ class IntegratedModeTests(unittest.TestCase):
 
     def test_private_fields_rejected_before_checks_run(self):
         keys = [{**records()[0], "p": 101, "case_type": "shared"}]
-        with patch("audit_pipeline.scan_moduli") as gcd:
+        with patch("rsa_auditor.audit_pipeline.scan_moduli") as gcd:
             with self.assertRaises(ValueError):
                 run_audit(keys, "gcd", "pairwise", 3)
         gcd.assert_not_called()
@@ -116,7 +116,7 @@ class IntegratedModeTests(unittest.TestCase):
         keys = records()[:2]
         forged = scan_moduli([key["n"] for key in keys])
         forged["findings"][keys[0]["n"]]["p"] = 103
-        with patch("audit_pipeline.scan_moduli", return_value=forged):
+        with patch("rsa_auditor.audit_pipeline.scan_moduli", return_value=forged):
             with self.assertRaises(ValueError):
                 run_audit(keys, "combined", "pairwise", 3)
 
@@ -142,7 +142,7 @@ class Saved2048AuditorTests(unittest.TestCase):
         cls.case = load_dataset(cls.directory)
 
     def test_saved_fixture_recovers_and_decrypts_through_both_attack_branches(self):
-        from evaluation import evaluate_audit
+        from rsa_auditor.evaluation import evaluate_audit
         keys = self.case["public_keys"]
         self.assertEqual(len(keys), 8)
         self.assertEqual({record["n"].bit_length() for record in keys}, {2048})
@@ -168,10 +168,10 @@ class Saved2048AuditorTests(unittest.TestCase):
         self.assertGreater(report["fermat_exhausted_moduli"], 0)
 
     def test_integrated_public_only_cli_does_not_load_truth_and_exports_lossless_report(self):
-        from demo import main
+        from rsa_auditor.cli import main
         with TemporaryDirectory() as directory:
             output = Path(directory) / "report.json"
-            with patch("demo.load_dataset", side_effect=AssertionError("must not read truth")):
+            with patch("rsa_auditor.cli.load_dataset", side_effect=AssertionError("must not read truth")):
                 with redirect_stdout(StringIO()):
                     code = main(["--public-only", str(self.directory / "public.json"),
                                  "--mode", "combined", "--fermat-budget", "256",

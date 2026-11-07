@@ -1,29 +1,67 @@
 # SC4010 — RSA public-key auditor
 
-One local auditor for two deliberate weaknesses in synthetic RSA-2048 keys:
-shared primes across different keys, and unusually close primes within one key.
-It implements known attacks; it does not break arbitrary RSA-2048.
+A local auditor for synthetic RSA-2048 keys with shared prime factors or
+unusually close prime factors. It combines Van's GCD work with Krystal's
+Fermat implementation in one system.
 
-## Run the integrated demo
+## Start here
+
+Run commands from the repository root:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python demo.py --mode combined --fermat-budget 256
-```
-
-The saved default dataset is `data/public/auditor_demo`. The command reads only
-public records, runs the attacks, reconstructs recovered keys, and decrypts the
-available synthetic OAEP ciphertexts. Private factors and expected messages are
-not attack inputs. To check the results afterward against separate evaluator
-truth, add `--evaluate`:
-
-```bash
 python demo.py --mode combined --fermat-budget 256 --evaluate
 ```
 
-All three modes use the same saved public file:
+The saved demonstration has 8 public records / 7 unique 2048-bit moduli.
+At budget 256, the recorded combined run recovers 4 moduli / 5 records and
+verifies all 5 OAEP plaintexts. Three moduli exhaust that Fermat budget.
+`--evaluate` loads the separate private truth only after scanning and recovery.
+Omit it for a public-only audit.
+
+## Folder guide
+
+```text
+SC4010-WeakRSA/
+├── demo.py                  # run the auditor
+├── build_dataset.py         # create a new saved dataset
+├── experiments.py           # run repeatable comparisons
+├── rsa_auditor/             # shared application code
+│   ├── cli.py               # command-line input and audit reports
+│   ├── audit_pipeline.py    # GCD / Fermat / combined orchestration
+│   ├── shared_prime_attack.py
+│   ├── batch_gcd_attack.py
+│   ├── fermat_adapter.py    # calls Krystal's original Fermat code
+│   ├── key_recovery.py      # factor validation, inverse and OAEP
+│   ├── contracts.py         # common records and result formats
+│   ├── normalization.py     # validation and duplicate handling
+│   ├── dataset_io.py        # lossless public/private JSON files
+│   ├── build_dataset.py     # dataset assembly
+│   ├── generators/          # shared-prime, control and close-prime cases
+│   ├── evaluation.py        # independent post-attack checks
+│   ├── compare_modes.py     # shared three-mode comparison
+│   └── experiments.py       # original GCD experiments and shared runner
+├── data/
+│   ├── public/              # attack inputs and checksums
+│   └── private/             # evaluator factors, labels and messages
+├── results/                 # combined pilot and GCD findings
+├── tests/                   # shared correctness and integration tests
+├── legacy/
+│   ├── close_primes/        # Krystal's original project, preserved together
+│   │   └── results/         # her original CSVs and graphs
+│   └── gcd_demo.py          # original standalone GCD demo
+└── docs/                    # contributions, history and publishing steps
+```
+
+The three top-level Python files are small entrypoints. Implementation lives in
+`rsa_auditor/`; data, measured outputs and original standalone work each have a
+clear home. Krystal's original algorithms are still used through the adapters.
+Her original files and saved results were moved without changing their contents.
+The `close-primes`, `gcd` and `main` branches are unaffected by this cleanup.
+
+## Three modes, one saved input
 
 ```bash
 python demo.py --mode gcd
@@ -31,116 +69,85 @@ python demo.py --mode fermat --fermat-budget 256
 python demo.py --mode combined --fermat-budget 256
 ```
 
-| Mode | What runs |
+| Mode | Execution |
 | --- | --- |
-| `gcd` | One selected complete GCD scanner on every unique modulus |
-| `fermat` | Independent Fermat search on each unique modulus, up to B candidates each |
-| `combined` | GCD first; Fermat with the same B on the unfactored moduli |
+| `gcd` | Scan every unique modulus using the selected GCD backend |
+| `fermat` | Search each unique modulus independently, up to B candidates each |
+| `combined` | Run GCD first, then Fermat only on remaining unfactored moduli |
 
-Select `--gcd-backend pairwise` or `--gcd-backend batch` (default). The CLI defaults
-to GCD mode; the integrated demonstration above explicitly selects combined.
-The first Fermat candidate counts as one. A zero budget performs no candidate
-tests. `budget_exhausted`, `no_shared_factor_in_dataset`, and `not_run` have
-different meanings; none says a key is secure. Combined records the first
-successful method, so a GCD success skips Fermat even if both could recover it.
+Choose `--gcd-backend pairwise` or `--gcd-backend batch` (default). The CLI
+defaults to GCD mode. The first Fermat candidate counts as one; budget zero
+performs no candidate tests. Combined records the first successful method.
+`budget_exhausted`, `no_shared_factor_in_dataset` and `not_run` are different
+outcomes; none establishes that a key is secure.
 
-For an explicit public-only path and a saved JSON report:
+To use a public file directly and save a new lossless JSON report:
 
 ```bash
 python demo.py --public-only data/public/auditor_demo/public.json --mode combined --fermat-budget 256 --output results/my_audit/report.json
 ```
 
-The report distinguishes unique moduli from original records, preserves each
-record's exponent, shows each stage's status and work counters, and includes
-recovered plaintext bytes as hex. Reports refuse to overwrite existing files.
+Reports distinguish unique moduli from original records, retain each record's
+exponent, and include stage statuses, counters and recovered plaintext bytes as
+hex. Existing output files are protected from overwrite.
 
-## Simple code map
+## Datasets and experiments
 
-```text
-public records -> normalize/deduplicate -> GCD -> Fermat on remaining moduli
-               -> validate factors -> map original records -> recover/decrypt
-```
-
-| File | Responsibility |
-| --- | --- |
-| `demo.py` | One command for the integrated audit and report |
-| `audit_pipeline.py` | Three modes, stage outcomes, timing and record mapping |
-| `normalization.py`, `contracts.py` | Public records, validation and shared result formats |
-| `shared_prime_attack.py`, `batch_gcd_attack.py` | Van's pairwise/batch GCD algorithms |
-| `fermat_attack.py` | Krystal's original Fermat implementations, unchanged |
-| `fermat_adapter.py` | Bounded common interface to her original Fermat baseline |
-| `key_recovery.py` | Common factor validation, extended Euclid and OAEP-SHA256 recovery |
-| `generators/` | Shared-prime/control cases and an adapter to her original generator |
-| `dataset_io.py` | Lossless public/private fixture files and checksums |
-| `build_dataset.py` | Assemble, deduplicate-copy, shuffle and save cases |
-| `evaluation.py` | Independent private checks, used after the attack |
-| `compare_modes.py`, `experiments.py` | Shared mode comparison and original GCD experiments |
-| `data/`, `results/`, `tests/` | Saved inputs, actual measurements, correctness checks |
-
-The original GCD demo remains `gcd_demo.py`; her original demo remains
-`demo_close_primes.py`. Her generation, Fermat variants, prime-gap/sieving
-experiments and saved results are preserved. The integrated budget uses the
-baseline's consecutive candidate tests, so it has one clear meaning across
-standalone and combined mode. Her optimized variants remain available for her
-separate comparisons.
-
-## Saved mixed dataset
-
-`auditor_demo` has **8 records / 7 unique 2048-bit moduli**: a shared-prime pair,
-two independent controls, three close-prime cases with different search costs,
-and a copy of one shared-prime record. IDs are neutral and order is shuffled.
-Only the private evaluator file contains labels, factors, actual gaps and
-expected plaintext. Unrelated cases are checked for accidental prime reuse.
-
-To generate another fixture without overwriting the saved demonstration:
+Create another mixed collection without replacing the saved demonstration:
 
 ```bash
 python build_dataset.py --case auditor --name my_auditor --bits 2048 --message "SC4010 combined auditor demo"
 ```
 
-A shuffle seed fixes ordering, not cryptographic primes. Save the file once and
-compare modes on those exact bytes. Public files are under `data/public/`; the
-matching evaluator files are under `data/private/`.
+The collection contains a shared-prime pair, two controls, three close-prime
+cases at different costs and a duplicate. Neutral IDs and shuffling hide case
+labels; private truth is stored separately. Unrelated sources are checked for
+accidental prime reuse. Save once and compare the same public bytes across all
+modes; a shuffle seed alone does not reproduce cryptographic prime generation.
 
-## Experiments
-
-Run the shared comparison with fresh state for every mode, budget and trial:
+Run the shared mode/budget comparison:
 
 ```bash
 python experiments.py --mode compare --dataset data/public/auditor_demo --budgets 16 256 --trials 5 --output results/my_comparison
 ```
 
-It saves raw `mode_comparison.csv`, `summary.json`, `run_metadata.json`, and an
-explicitly evaluator-only `fermat_gap_budget.csv`. Results include recovery sets,
-overlap, additional combined recoveries, union agreement, candidate counts,
-exhaustion, scan time and actual checked decryptions. Private gaps are exported
-only after the scans. Failed runs remain explicit rather than appearing as zero
-runtime or successful factorisations at the budget cap.
+The runner uses fresh state and rotates mode order. It records recovery sets,
+overlap, additional combined recoveries, union agreement, candidate work,
+exhaustion, scan time and actual verified decryptions. The gap/budget CSV is
+explicitly evaluator-only; private gaps never enter the attack.
 
-Scan timing includes selected GCD work (trees and fallback included), Fermat
-searches and factor validation. It excludes normalization, record mapping,
-generation, I/O, key reconstruction/decryption, evaluation and printing. Mode
-order rotates across repeats. This small fixed fixture is an integration pilot,
-not evidence of a universal speedup. The joint runner does not measure memory;
-the original pairwise/batch runner measures traced allocations separately.
+Scan time includes selected GCD work, trees/fallback, Fermat calls and factor
+validation. It excludes normalization, record mapping, generation, I/O,
+recovery/OAEP, evaluation and reporting. Memory is measured separately by the
+original GCD runner, not the shared comparison. These small fixed-fixture pilots
+do not establish a universal speedup.
 
-The checked-in shared pilot is in `results/auditor_pilot/`. Earlier Van findings
-are described in [results/README.md](results/README.md). Krystal's original CSVs
-and graphs remain in `results/`; `prime_gap_experiments.py` and
-`sieve_experiments.py` retain her separate experiments. Her runtime extrapolation
-is a prediction, distinct from measured results.
+See [results/README.md](results/README.md) for saved findings and raw files.
+Earlier benchmark metadata preserves its original source revision and paths;
+[the move record](docs/layout-migration.json) maps those paths to this layout.
+Recorded measurements keep their original run metadata; cleanup smoke checks use temporary outputs.
 
-## Verify and explain the work
+## Tests, originals and history
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Tests cover budget boundaries, duplicate-only and same-n/different-e records,
-full-GCD fallback, independent mode unions, public/private separation, and real
-RSA-2048 recovery/decryption through both attack branches. Adding a shared-prime
-companion can make an unchanged target recoverable; exhaustion only describes
-the configured search budget.
+The suite covers budget boundaries, duplicates and different exponents for the
+same modulus, full-GCD fallback, mode unions, public/private separation, and
+real RSA-2048 recovery/decryption through both attack branches.
 
-See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for source provenance and the AI-assisted
-integration record. Planned ownership is not proof of actual authorship.
+To run the original standalone projects:
+
+```bash
+python -m legacy.gcd_demo --dataset data/public/van_demo
+cd legacy/close_primes
+python demo.py
+```
+
+Original close-prime scripts use their sibling imports and local `results/`
+folder. Their [project notes](legacy/close_primes/README.md) explain that layout.
+
+[Contributions and AI assistance](docs/CONTRIBUTIONS.md) records actual source
+provenance. [Publishing steps](docs/PUBLISHING.md) explain how to make this
+version GitHub's `main` after review. Nothing was pushed automatically.

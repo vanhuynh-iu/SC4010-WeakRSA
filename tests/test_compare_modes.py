@@ -14,11 +14,11 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-import audit_pipeline
-import compare_modes
-import experiments
-from build_dataset import save_dataset
-from evaluation import build_reference, evaluate_audit, expected_moduli
+from rsa_auditor import audit_pipeline
+from rsa_auditor import compare_modes
+from rsa_auditor import experiments
+from rsa_auditor.build_dataset import save_dataset
+from rsa_auditor.evaluation import build_reference, evaluate_audit, expected_moduli
 
 
 def toy_case():
@@ -157,7 +157,7 @@ class ModeComparisonTests(unittest.TestCase):
                 self.assertTrue(all(set(record) <= {"key_id", "n", "e", "ciphertext"} for record in records))
                 calls.append((records, options.copy()))
                 return real_run(records, **options)
-            with patch("audit_pipeline.run_audit", side_effect=observed):
+            with patch("rsa_auditor.audit_pipeline.run_audit", side_effect=observed):
                 summary = compare_modes.run_mode_comparison(directory, output, [16, 256], 3, "batch")
             self.assertTrue(summary["all_runs_ok"])
             self.assertEqual(len(calls), 18)
@@ -182,9 +182,9 @@ class ModeComparisonTests(unittest.TestCase):
             self.assertTrue(all(row["fermat_status"] == "factored" for row in c_rows if row["fermat_budget"] == "256"))
             self.assertTrue(all(row["required_fermat_candidates"] == "50" for row in c_rows))
             metadata = json.loads((output / "run_metadata.json").read_text())
-            self.assertIn("evaluation.py", metadata["source_sha256"])
-            self.assertIn("fermat_adapter.py", metadata["source_sha256"])
-            self.assertIn("dataset_io.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/evaluation.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/fermat_adapter.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/dataset_io.py", metadata["source_sha256"])
             self.assertEqual(metadata["public_sha256"], expected_sha)
             self.assertIn("recovery/OAEP", metadata["excluded_from_timing"])
 
@@ -199,7 +199,7 @@ class ModeComparisonTests(unittest.TestCase):
                     report["findings"][187]["fermat_candidate_tests"] += 1
                     report["fermat_candidate_tests"] += 1
                 return report
-            with patch("audit_pipeline.run_audit", side_effect=wrong_counter):
+            with patch("rsa_auditor.audit_pipeline.run_audit", side_effect=wrong_counter):
                 summary = compare_modes.run_mode_comparison(directory, output, [16], 1)
             self.assertFalse(summary["all_runs_ok"])
             failed = next(row for row in self.read_csv(output) if row["mode"] == "fermat")
@@ -215,7 +215,7 @@ class ModeComparisonTests(unittest.TestCase):
                 if options["mode"] == "fermat":
                     raise RuntimeError("deliberate unit failure")
                 return real_run(records, **options)
-            with patch("audit_pipeline.run_audit", side_effect=broken):
+            with patch("rsa_auditor.audit_pipeline.run_audit", side_effect=broken):
                 summary = compare_modes.run_mode_comparison(directory, output, [16], 1)
             self.assertFalse(summary["all_runs_ok"])
             failed = next(row for row in self.read_csv(output) if row["mode"] == "fermat")
@@ -231,7 +231,7 @@ class ModeComparisonTests(unittest.TestCase):
             output = Path(root) / "results"
             output.mkdir()
             (output / "summary.json").write_text("original")
-            with patch("audit_pipeline.run_audit", side_effect=AssertionError("must not scan")):
+            with patch("rsa_auditor.audit_pipeline.run_audit", side_effect=AssertionError("must not scan")):
                 with self.assertRaises(FileExistsError):
                     compare_modes.run_mode_comparison(directory, output)
                 for options in ({"trials": 0}, {"budgets": []}, {"budgets": [1, 1]},
@@ -241,8 +241,8 @@ class ModeComparisonTests(unittest.TestCase):
             self.assertEqual((output / "summary.json").read_text(), "original")
 
     def test_experiments_compare_route_does_not_generate_or_run_legacy_benchmarks(self):
-        with patch("compare_modes.run_mode_comparison", return_value={"all_runs_ok": True}) as run, \
-             patch("experiments.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
+        with patch("rsa_auditor.compare_modes.run_mode_comparison", return_value={"all_runs_ok": True}) as run, \
+             patch("rsa_auditor.experiments.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
              redirect_stdout(StringIO()):
             self.assertEqual(experiments.main(["--mode", "compare", "--dataset", "fixture", "--budgets", "16", "256",
                                                "--trials", "3", "--gcd-backend", "pairwise", "--output", "out"]), 0)

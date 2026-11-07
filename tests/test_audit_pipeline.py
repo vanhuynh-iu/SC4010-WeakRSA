@@ -12,11 +12,11 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from audit_pipeline import audit_public_keys, evaluate_scan, measure_shared_prime_scan, recover_messages
-from build_dataset import assemble_dataset, dataset_paths, load_dataset, load_public_keys, save_dataset
-from demo import main
-from generators.shared_prime_cases import generate_shared_prime_keys, generate_mixed_key_dataset, make_observed_subset
-from key_recovery import encrypt_message
+from rsa_auditor.audit_pipeline import audit_public_keys, evaluate_scan, measure_shared_prime_scan, recover_messages
+from rsa_auditor.build_dataset import assemble_dataset, dataset_paths, load_dataset, load_public_keys, save_dataset
+from rsa_auditor.cli import main
+from rsa_auditor.generators.shared_prime_cases import generate_shared_prime_keys, generate_mixed_key_dataset, make_observed_subset
+from rsa_auditor.key_recovery import encrypt_message
 
 
 def _dataset_file(directory, file_name):
@@ -293,7 +293,7 @@ class PairwiseRecordAuditTests(unittest.TestCase):
         self.assertEqual(result["findings"][187]["status"], "no_shared_factor_in_dataset")
 
     def test_secrets_rejected_before_scanner_called(self):
-        with patch("audit_pipeline.scan_moduli") as scanner:
+        with patch("rsa_auditor.audit_pipeline.scan_moduli") as scanner:
             with self.assertRaises(ValueError):
                 audit_public_keys([{"key_id": "A", "n": 187, "e": 17, "p": 11}])
         scanner.assert_not_called()
@@ -631,7 +631,7 @@ class ConsolidatedDatasetLayoutTests(unittest.TestCase):
                 dataset_paths(public, public)
 
     def test_dataset_builder_cli_constructs_separated_mixed_inputs(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.build_dataset import main as build_main
         with TemporaryDirectory() as directory, redirect_stdout(StringIO()):
             self.assertEqual(build_main(["--case", "mixed", "--name", "example", "--bits", "64",
                                          "--data-root", directory]), 0)
@@ -644,7 +644,7 @@ class ConsolidatedDatasetLayoutTests(unittest.TestCase):
             self.assertEqual(len(result["recovered_records"]), 14)
 
     def test_dataset_builder_cli_encrypt_attack_recover(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.build_dataset import main as build_main
         with TemporaryDirectory() as directory, redirect_stdout(StringIO()):
             self.assertEqual(build_main(["--case", "shared", "--name", "message_example", "--bits", "1024",
                                          "--num-keys", "2", "--shared-keys", "2", "--message", "hello",
@@ -654,7 +654,7 @@ class ConsolidatedDatasetLayoutTests(unittest.TestCase):
             self.assertEqual(set(recover_messages(case["public_keys"], result).values()), {b"hello"})
 
     def test_dataset_builder_rejects_parent_traversal_before_writing(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.build_dataset import main as build_main
         with TemporaryDirectory() as directory, redirect_stderr(StringIO()):
             with self.assertRaises(SystemExit) as error:
                 build_main(["--name", "../outside", "--data-root", directory])
@@ -879,13 +879,13 @@ class DatasetAssemblyTests(unittest.TestCase):
 
     def test_assembly_primality_validation_is_cached_across_groups(self):
         from Crypto.Util.number import isPrime
-        with patch("build_dataset.isPrime", wraps=isPrime) as primality:
+        with patch("rsa_auditor.build_dataset.isPrime", wraps=isPrime) as primality:
             assemble_dataset([self.collection_case(), self.single_case(11, 23), self.single_case()])
         self.assertEqual(primality.call_count, 5)
         self.assertEqual({call.args[0] for call in primality.call_args_list}, {11, 17, 23, 31, 37})
 
     def test_merge_cli_saves_new_separated_dataset_and_preserves_sources(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.build_dataset import main as build_main
         with TemporaryDirectory() as directory:
             data = Path(directory) / "data"
             sources = []
@@ -921,7 +921,7 @@ class DatasetAssemblyTests(unittest.TestCase):
             self.assertEqual(_directory_snapshot(merged), saved)
 
     def test_merge_and_case_are_mutually_exclusive_before_writes(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.build_dataset import main as build_main
         with TemporaryDirectory() as directory, redirect_stderr(StringIO()):
             with self.assertRaises(SystemExit) as error:
                 build_main(["--merge", "missing", "--case", "shared", "--name", "new",
@@ -930,9 +930,9 @@ class DatasetAssemblyTests(unittest.TestCase):
             self.assertEqual(list(Path(directory).iterdir()), [])
 
     def test_builtin_cli_defaults_skip_assembly_but_options_enable_it(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.build_dataset import main as build_main
         with TemporaryDirectory() as directory, redirect_stdout(StringIO()):
-            with patch("build_dataset.assemble_dataset", side_effect=AssertionError("default must stay unchanged")):
+            with patch("rsa_auditor.build_dataset.assemble_dataset", side_effect=AssertionError("default must stay unchanged")):
                 self.assertEqual(build_main(["--name", "default", "--data-root", directory,
                                              "--bits", "64", "--num-keys", "2"]), 0)
             self.assertEqual(build_main(["--case", "shared", "--name", "assembled", "--data-root", directory,

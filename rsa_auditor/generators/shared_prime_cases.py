@@ -7,7 +7,7 @@ from typing import Optional, Set
 
 from Crypto.Util.number import getPrime
 
-from contracts import DatasetCase
+from ..contracts import DatasetCase
 
 _MAX_PRIME_ATTEMPTS = 10_000
 

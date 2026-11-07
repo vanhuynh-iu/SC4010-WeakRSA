@@ -4,12 +4,12 @@ import argparse
 import json
 from time import perf_counter
 
-from generators.shared_prime_cases import (
+from rsa_auditor.generators.shared_prime_cases import (
     generate_shared_prime_keys, generate_mixed_key_dataset, make_observed_subset,
 )
-from key_recovery import encrypt_message
-from audit_pipeline import measure_shared_prime_scan, recover_messages, evaluate_scan
-from build_dataset import load_dataset, load_public_keys, save_dataset, dataset_paths
+from rsa_auditor.key_recovery import encrypt_message
+from rsa_auditor.audit_pipeline import measure_shared_prime_scan, recover_messages, evaluate_scan
+from rsa_auditor.build_dataset import load_dataset, load_public_keys, save_dataset, dataset_paths
 
 
 def demo_shared_prime_attack(num_keys=6, num_shared=2, modulus_bits=2048,

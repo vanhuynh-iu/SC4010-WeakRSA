@@ -8,8 +8,8 @@ import math
 
 from Crypto.Util.number import isPrime
 
-from contracts import SCAN_COUNTERS
-from normalization import normalize_public_keys
+from .contracts import SCAN_COUNTERS
+from .normalization import normalize_public_keys
 
 
 MODES = ("gcd", "fermat", "combined")

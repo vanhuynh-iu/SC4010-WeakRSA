@@ -2,9 +2,9 @@
 
 from math import isqrt
 
-from contracts import FermatResult
-from fermat_attack import fermat_attack
-from key_recovery import validate_factors
+from .contracts import FermatResult
+from legacy.close_primes.fermat_attack import fermat_attack
+from .key_recovery import validate_factors
 
 
 def fermat_factor(n: int, max_candidates: int) -> FermatResult:

@@ -18,14 +18,14 @@ import tracemalloc
 import unittest
 from unittest.mock import patch
 
-import experiments
-from experiments import generate_figures, load_memory_results, load_scalability_results
-from batch_gcd_attack import scan_moduli_batch
-from generators.shared_prime_cases import generate_shared_prime_keys
-from key_recovery import encrypt_message
-from shared_prime_attack import scan_moduli
-from audit_pipeline import audit_public_keys
-from build_dataset import save_dataset
+from rsa_auditor import experiments
+from rsa_auditor.experiments import generate_figures, load_memory_results, load_scalability_results
+from rsa_auditor.batch_gcd_attack import scan_moduli_batch
+from rsa_auditor.generators.shared_prime_cases import generate_shared_prime_keys
+from rsa_auditor.key_recovery import encrypt_message
+from rsa_auditor.shared_prime_attack import scan_moduli
+from rsa_auditor.audit_pipeline import audit_public_keys
+from rsa_auditor.build_dataset import save_dataset
 
 
 class ScalabilityExperimentTests(unittest.TestCase):
@@ -54,7 +54,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
             dataset_root = Path(root) / "inputs"
             directories = experiments.prepare_scalability_datasets([10, 20], dataset_root, 32)
             original = {str(path): (path / "public.json").read_bytes() for path in directories}
-            with patch("generators.shared_prime_cases.generate_scalability_dataset", side_effect=AssertionError("must reuse")):
+            with patch("rsa_auditor.generators.shared_prime_cases.generate_scalability_dataset", side_effect=AssertionError("must reuse")):
                 reused = experiments.prepare_scalability_datasets([10, 20], dataset_root, 32)
             self.assertEqual(directories, reused)
             for size, directory in zip((10, 20), directories):
@@ -107,7 +107,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
             self.assertEqual(metadata["gcd_backend"], "math")
             self.assertEqual(len(metadata["warmup_results"]), 2)
             self.assertEqual(metadata["datasets"][0]["public_sha256"], expected_sha)
-            self.assertIn("experiments.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/experiments.py", metadata["source_sha256"])
             self.assertIn("dirty", metadata["git"])
             for stat in summary["statistics"]:
                 self.assertEqual(stat["trials_completed"], 2)
@@ -128,7 +128,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_toy(Path(root) / "input")
             output = Path(root) / "results"
-            with patch("experiments._scanner_functions", return_value=scanners):
+            with patch("rsa_auditor.experiments._scanner_functions", return_value=scanners):
                 summary = experiments.run_scalability_experiment([directory], output, trials=3, warmups=1)
             self.assertTrue(summary["all_runs_ok"])
             self.assertEqual([name for name, _, _ in events], [
@@ -157,7 +157,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_toy(Path(root) / "input")
             output = Path(root) / "results"
-            with patch("experiments.perf_counter_ns", side_effect=ticks):
+            with patch("rsa_auditor.experiments.perf_counter_ns", side_effect=ticks):
                 summary = experiments.run_scalability_experiment([directory], output, trials=2, warmups=0,
                                                                  measure_memory=False)
             rows = self.read_csv(output)
@@ -177,7 +177,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_toy(Path(root) / "input")
             output = Path(root) / "results"
-            with patch("experiments._scanner_functions", return_value={"pairwise": scan_moduli,
+            with patch("rsa_auditor.experiments._scanner_functions", return_value={"pairwise": scan_moduli,
                                                                        "batch_with_fallback": wrong_batch}):
                 summary = experiments.run_scalability_experiment([directory], output, trials=1, warmups=0,
                                                                  measure_memory=False)
@@ -197,7 +197,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_toy(Path(root) / "input")
             output = Path(root) / "results"
-            with patch("experiments._scanner_functions", return_value={"pairwise": scan_moduli,
+            with patch("rsa_auditor.experiments._scanner_functions", return_value={"pairwise": scan_moduli,
                                                                        "batch_with_fallback": broken_batch}):
                 summary = experiments.run_scalability_experiment([directory], output, trials=1, warmups=0,
                                                                  measure_memory=False)
@@ -218,7 +218,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
             summary = json.loads((output / "summary.json").read_text())
             self.assertTrue(all(stat["stdev_seconds"] is None for stat in summary["statistics"]))
             original = {path.name: path.read_bytes() for path in output.iterdir()}
-            with patch("experiments._scanner_functions", side_effect=AssertionError("must not run")):
+            with patch("rsa_auditor.experiments._scanner_functions", side_effect=AssertionError("must not run")):
                 with self.assertRaises(FileExistsError):
                     experiments.run_scalability_experiment([directory], output)
             self.assertEqual({path.name: path.read_bytes() for path in output.iterdir()}, original)
@@ -231,7 +231,7 @@ class ScalabilityExperimentTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_toy(Path(root) / "input")
             output = Path(root) / "results"
-            with patch("experiments._scanner_functions", return_value={"pairwise": incorrect_counter,
+            with patch("rsa_auditor.experiments._scanner_functions", return_value={"pairwise": incorrect_counter,
                                                                        "batch_with_fallback": scan_moduli_batch}):
                 summary = experiments.run_scalability_experiment([directory], output, trials=1, warmups=0,
                                                                  measure_memory=False)
@@ -254,8 +254,8 @@ class ScalabilityExperimentTests(unittest.TestCase):
             experiments._factor_map(result, moduli, "batch_with_fallback", result["gcd_calls"])
 
     def test_import_is_job_free_and_invalid_settings_reject_before_work(self):
-        with patch("generators.shared_prime_cases.generate_scalability_dataset", side_effect=AssertionError("no generation")), \
-             patch("shared_prime_attack.scan_moduli", side_effect=AssertionError("no scans")):
+        with patch("rsa_auditor.generators.shared_prime_cases.generate_scalability_dataset", side_effect=AssertionError("no generation")), \
+             patch("rsa_auditor.shared_prime_attack.scan_moduli", side_effect=AssertionError("no scans")):
             importlib.reload(experiments)
         importlib.reload(experiments)
         for kwargs in ({"trials": 0}, {"trials": True}, {"warmups": -1},
@@ -332,7 +332,7 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
             metadata = json.loads((output / "correctness_metadata.json").read_text())
             self.assertEqual(metadata["datasets"][0]["public_sha256"],
                              hashlib.sha256((directory / "public.json").read_bytes()).hexdigest())
-            self.assertIn("experiments.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/experiments.py", metadata["source_sha256"])
 
     def test_oaep_duplicate_records_each_use_their_own_exponent(self):
         # Use 1024-bit keys for wrapper checks.
@@ -408,7 +408,7 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_case(Path(root) / "toy", self.toy_case())
             output = Path(root) / "checks"
-            with patch("experiments.audit_public_keys", side_effect=fail_batch):
+            with patch("rsa_auditor.experiments.audit_public_keys", side_effect=fail_batch):
                 summary = experiments.run_shared_prime_correctness([directory], output)
             self.assertFalse(summary["all_runs_ok"])
             rows = self.read_rows(output, "shared_prime_correctness.csv")
@@ -442,7 +442,7 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_case(Path(root) / "toy", self.toy_case())
             output = Path(root) / "checks"
-            with patch("experiments.audit_public_keys", side_effect=omit_one):
+            with patch("rsa_auditor.experiments.audit_public_keys", side_effect=omit_one):
                 summary = experiments.run_shared_prime_correctness([directory], output)
             self.assertFalse(summary["all_runs_ok"])
             rows = self.read_rows(output, "shared_prime_correctness.csv")
@@ -455,20 +455,20 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
             output = Path(root) / "checks"
             experiments.run_shared_prime_correctness([directory], output)
             original = {p.name: p.read_bytes() for p in output.iterdir()}
-            with patch("experiments.audit_public_keys", side_effect=AssertionError("must not run")):
+            with patch("rsa_auditor.experiments.audit_public_keys", side_effect=AssertionError("must not run")):
                 with self.assertRaises(FileExistsError):
                     experiments.run_shared_prime_correctness([directory], output)
             self.assertEqual({p.name: p.read_bytes() for p in output.iterdir()}, original)
 
     def test_import_and_cli_modes_do_not_generate_or_benchmark(self):
-        with patch("audit_pipeline.audit_public_keys", side_effect=AssertionError("no scan on import")), \
-             patch("build_dataset.load_dataset", side_effect=AssertionError("no load on import")):
+        with patch("rsa_auditor.audit_pipeline.audit_public_keys", side_effect=AssertionError("no scan on import")), \
+             patch("rsa_auditor.build_dataset.load_dataset", side_effect=AssertionError("no load on import")):
             importlib.reload(experiments)
         importlib.reload(experiments)
-        with patch("experiments.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
-             patch("experiments.run_scalability_experiment", side_effect=AssertionError("no benchmark")), \
-             patch("experiments.run_shared_prime_correctness", return_value={"all_runs_ok": True}) as correctness, \
-             patch("experiments.run_coverage_experiment", return_value={"all_runs_ok": True}) as coverage, \
+        with patch("rsa_auditor.experiments.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
+             patch("rsa_auditor.experiments.run_scalability_experiment", side_effect=AssertionError("no benchmark")), \
+             patch("rsa_auditor.experiments.run_shared_prime_correctness", return_value={"all_runs_ok": True}) as correctness, \
+             patch("rsa_auditor.experiments.run_coverage_experiment", return_value={"all_runs_ok": True}) as coverage, \
              redirect_stdout(StringIO()):
             self.assertEqual(experiments.main(["--mode", "correctness", "--dataset-dirs", "fixture", "--output", "out"]), 0)
             correctness.assert_called_once_with(["fixture"], "out")
@@ -525,9 +525,9 @@ class ResultAggregationTests(unittest.TestCase):
         metadata = {"sources": {"scalability": {"included_rows": 2, "excluded_rows": 0,
                                                 "exclusion_reasons": {}}},
                     "charts": [{"paths": ["runtime.png"]}]}
-        with patch("experiments.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
-             patch("experiments.run_scalability_experiment", side_effect=AssertionError("no benchmark")), \
-             patch("experiments.generate_figures", return_value=metadata) as figures, \
+        with patch("rsa_auditor.experiments.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
+             patch("rsa_auditor.experiments.run_scalability_experiment", side_effect=AssertionError("no benchmark")), \
+             patch("rsa_auditor.experiments.generate_figures", return_value=metadata) as figures, \
              redirect_stdout(StringIO()):
             self.assertEqual(experiments.main(["--mode", "plot", "--input", "saved-results",
                                                "--output", "figures", "--overwrite-figures"]), 0)

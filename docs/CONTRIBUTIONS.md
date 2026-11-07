@@ -39,3 +39,16 @@ measurements. Run metadata records source/input fingerprints and timing scope.
 
 No new changes were made to `close-primes`, `gcd`, or local `main`. This work was
 not pushed to GitHub automatically.
+
+## File organization — 8 November 2026
+
+At Van's request, Codex grouped the active implementation into `rsa_auditor/`,
+kept three root command entrypoints, and placed original close-prime code and
+results together under `legacy/close_primes/`. Their original contents were
+preserved. The prior GCD demo moved to `legacy/gcd_demo.py` with import paths
+updated. Tests, documentation and future-run source fingerprints were adjusted
+for the package layout. Existing measured data and recorded metadata were not
+rewritten. `layout-migration.json` records the old/new locations and hashes.
+
+The original `close-primes`, `gcd` and `main` branch references were preserved.
+This cleanup does not declare new student authorship or publish a branch.
