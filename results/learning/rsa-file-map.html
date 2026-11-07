@@ -1,0 +1,94 @@
+<div id="rsa-file-map">
+  <div class="viz-controls" role="group" aria-label="Select a project file">
+    <button type="button" class="btn" data-file="demo" aria-pressed="true">demo.py</button>
+    <button type="button" class="btn" data-file="generation" aria-pressed="false">key_generation.py</button>
+    <button type="button" class="btn" data-file="attack" aria-pressed="false">shared_prime_attack.py</button>
+    <button type="button" class="btn" data-file="recovery" aria-pressed="false">key_recovery.py</button>
+    <button type="button" class="btn" data-file="data" aria-pressed="false">fixtures/van_demo/</button>
+    <button type="button" class="btn" data-file="storage" aria-pressed="false">shared_prime_fixtures.py</button>
+    <button type="button" class="btn" data-file="tests" aria-pressed="false">tests/</button>
+  </div>
+  <div class="rsa-flow" role="img" aria-label="Selected file input, operation, and output">
+    <div><div class="text-small text-muted">INPUT</div><pre><code data-part="input">python demo.py --small</code></pre></div>
+    <div class="rsa-arrow" aria-hidden="true">→</div>
+    <div><div class="text-small text-muted">OPERATION</div><pre><code data-part="operation">demo_small_arithmetic()
+encrypt → scan → recover → check</code></pre></div>
+    <div class="rsa-arrow" aria-hidden="true">→</div>
+    <div><div class="text-small text-muted">OUTPUT</div><pre><code data-part="output">recovered factors
+decrypted 42
+terminal results</code></pre></div>
+  </div>
+  <div class="text-small" data-part="detail" aria-live="polite">demo.py · Program runner · Calls the other modules</div>
+</div>
+<style>
+#rsa-file-map { color: var(--foreground); }
+#rsa-file-map .rsa-flow { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1.2fr) auto minmax(0,1fr); align-items: center; gap: 12px; margin: 22px 0 16px; }
+#rsa-file-map .rsa-flow > div { min-width: 0; }
+#rsa-file-map pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+#rsa-file-map .rsa-arrow { color: var(--muted-foreground); }
+@media (max-width: 620px) {
+  #rsa-file-map .rsa-flow { grid-template-columns: minmax(0,1fr); gap: 6px; }
+  #rsa-file-map .rsa-arrow { transform: rotate(90deg); justify-self: start; margin-left: 8px; }
+}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('rsa-file-map');
+  const files = {
+    demo: {
+      input: 'python demo.py --small',
+      operation: 'demo_small_arithmetic()\nencrypt → scan → recover → check',
+      output: 'recovered factors\ndecrypted 42\nterminal results',
+      detail: 'demo.py · Program runner · Calls the other modules'
+    },
+    generation: {
+      input: 'num_keys = 6\nnum_shared = 2\nmodulus_bits = 2048',
+      operation: 'generate_shared_prime_keys()\nchoose primes → reuse one p',
+      output: 'public_keys: IDs, n, e\nprivate_truth: p, q, labels\nexpected_vulnerable_ids',
+      detail: 'key_generation.py · Creates fresh experimental keys'
+    },
+    attack: {
+      input: 'public n: 187, 253, 899\nneutral key IDs',
+      operation: 'scan_moduli()\neuclidean_gcd(187, 253) → 11',
+      output: 'key_001: p=11, q=17\nkey_002: p=11, q=23\n3 GCD comparisons',
+      detail: 'shared_prime_attack.py · Finds factors from public moduli'
+    },
+    recovery: {
+      input: 'recovered p=11, q=17\npublic n=187, e=17\nciphertext=59',
+      operation: 'recover_private_key() → d=113\nsmall RSA: pow(59, 113, 187)',
+      output: 'plaintext integer: 42\nlarge-key wrapper: plaintext bytes',
+      detail: 'key_recovery.py · Computes d; also provides large-key OAEP wrappers'
+    },
+    data: {
+      input: 'Previously generated\neducational 2048-bit keys',
+      operation: 'public.json\nprivate_truth.json',
+      output: 'public input records\nseparate evaluator answers',
+      detail: 'fixtures/van_demo/ · Saved data directory · No Python algorithm'
+    },
+    storage: {
+      input: 'Python records ↔ JSON files',
+      operation: 'save_fixtures()\nload_fixtures()\nload_public_keys()',
+      output: 'saved decimal strings / hex\nloaded integers / bytes',
+      detail: 'shared_prime_fixtures.py · Reads and writes saved data'
+    },
+    tests: {
+      input: 'Known examples\ninvalid inputs\nindependent reference results',
+      operation: 'test_key_generation.py\ntest_shared_prime.py\ntest_key_recovery.py\ntest_integration.py',
+      output: 'pass / failure\nerror details',
+      detail: 'tests/ · Separate correctness checks · Run with unittest'
+    }
+  };
+  const parts = {};
+  for (const name of ['input', 'operation', 'output', 'detail']) {
+    parts[name] = root.querySelector('[data-part="' + name + '"]');
+  }
+  const buttons = Array.from(root.querySelectorAll('[data-file]'));
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      const selected = files[button.dataset.file];
+      for (const candidate of buttons) candidate.setAttribute('aria-pressed', String(candidate === button));
+      for (const name of Object.keys(parts)) parts[name].textContent = selected[name];
+    });
+  }
+})();
+</script>
