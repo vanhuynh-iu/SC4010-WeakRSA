@@ -94,10 +94,6 @@ class SharedPrimeScannerTests(unittest.TestCase):
             "full_gcd_before_fallback": 0,
             "unresolved_after_fallback": 0,
             "matching_pair_count": 1,
-            "optional_debug_evidence": {
-                "matching_modulus_pairs": [(187, 253)],
-                "matching_pairs_truncated": False,
-            },
         })
 
     def test_unrelated_keys_have_explicit_no_shared_factor_status(self):
@@ -244,13 +240,10 @@ class SharedPrimeScannerTests(unittest.TestCase):
         self.assertEqual(primality.call_count, 4)
         self.assertEqual({call.args[0] for call in primality.call_args_list}, {11, 17, 23, 29})
 
-    def test_pair_evidence_is_bounded_while_pair_count_remains_exact(self):
+    def test_large_shared_group_has_exact_pair_count(self):
         inputs = [11 * q for q in (13, 17, 19, 23, 29, 31, 37, 41)]
         result = scan_moduli(inputs)
-        evidence = result["optional_debug_evidence"]
         self.assertEqual(result["matching_pair_count"], 28)
-        self.assertEqual(len(evidence["matching_modulus_pairs"]), 20)
-        self.assertTrue(evidence["matching_pairs_truncated"])
         self.assertEqual(len(self.factorizations(result)), 8)
         self.assert_counters(result, 28)
 

@@ -11,7 +11,6 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from rsa_auditor.datasets import builder as build_dataset
 from rsa_auditor.datasets import cli as dataset_cli
 from rsa_auditor.datasets import storage as dataset_io
 from rsa_auditor.datasets.builder import generate_auditor_dataset
@@ -103,7 +102,7 @@ class AuditorDatasetTests(unittest.TestCase):
     def test_repeated_collisions_fail_with_a_bounded_retry_count(self):
         with patch("rsa_auditor.datasets.generators.shared_primes.generate_shared_prime_keys", return_value=deepcopy(self.base)), \
              patch("rsa_auditor.datasets.generators.close_primes.generate_close_prime_key", return_value=self.collision()) as close, \
-             patch("rsa_auditor.datasets.builder._MAX_AUDITOR_CASE_ATTEMPTS", 3):
+             patch("rsa_auditor.datasets.builder.MAX_AUDITOR_CASE_ATTEMPTS", 3):
             with self.assertRaisesRegex(RuntimeError, "within 3 attempts"):
                 generate_auditor_dataset(64)
         self.assertEqual(close.call_count, 3)
@@ -147,11 +146,6 @@ class AuditorDatasetTests(unittest.TestCase):
             self.assertEqual(manifest["modulus_bit_lengths"], [64])
             for record in json.loads(public_path.read_text())["public_keys"]:
                 self.assertEqual(set(record), {"key_id", "n", "e"})
-
-    def test_legacy_dataset_io_exports_refer_to_the_shared_implementation(self):
-        for name in ("dataset_paths", "save_dataset", "load_dataset", "load_public_keys"):
-            self.assertIs(getattr(build_dataset, name), getattr(dataset_io, name))
-
 
 if __name__ == "__main__":
     unittest.main()

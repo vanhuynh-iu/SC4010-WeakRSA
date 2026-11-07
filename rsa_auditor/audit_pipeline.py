@@ -5,26 +5,35 @@ post-attack grading live in datasets.storage and evaluation, outside scanning.
 """
 
 from time import perf_counter_ns
-from typing import Iterable, Optional
 
-from .records import (
-    AuditReport, GCDAlgorithmInput, GCDBackend, PublicKeyRecord,
-    IntegratedAuditReport, SCAN_COUNTERS,
-)
-from .key_recovery import validate_factors
-from .public_inputs import normalize_public_keys
-from .attacks.pairwise_gcd import scan_moduli
-from .attacks.fermat import fermat_factor
+from rsa_auditor.attacks.batch_gcd import scan_moduli_batch
+from rsa_auditor.attacks.fermat import fermat_factor
+from rsa_auditor.attacks.pairwise_gcd import scan_moduli
+from rsa_auditor.constants import SCAN_COUNTERS
+from rsa_auditor.key_recovery import validate_factors
+from rsa_auditor.public_inputs import normalize_public_keys
 
 
-def run_audit(public_records, mode="combined", gcd_backend="batch",
-              fermat_budget=256, *, gcd_fn=None) -> IntegratedAuditReport:
-    """Audit public records using GCD, bounded Fermat, or both in that order.
+def run_audit(public_records,
+              mode="combined",
+              gcd_backend="batch",
+              fermat_budget=256,
+              *,
+              gcd_fn=None) -> dict:
+    """Run GCD, bounded Fermat, or GCD followed by Fermat on unresolved keys.
 
-    Every call owns fresh state. Combined mode skips Fermat only after validated
-    GCD success. The same candidate budget applies independently to each unique
-    modulus. Scan time includes both selected checks and factor validation;
-    normalization, record mapping, decryption and evaluation are outside it.
+    Each modulus gets its own Fermat budget. Timings cover attack work and
+    factor validation, excluding normalization, mapping, decryption and grading.
+
+    Args:
+        public_records: Records containing key_id, n, e and optional ciphertext.
+        mode: One of "gcd", "fermat", or "combined".
+        gcd_backend: Either "pairwise" or "batch".
+        fermat_budget: Maximum candidate positions per unique modulus.
+        gcd_fn: Optional GCD implementation used by instrumented experiments.
+
+    Returns:
+        Findings for each modulus and record, with timing and work counters.
     """
     if mode not in ("gcd", "fermat", "combined"):
         raise ValueError("mode must be gcd, fermat, or combined")
@@ -50,8 +59,9 @@ def run_audit(public_records, mode="combined", gcd_backend="batch",
         if gcd_backend == "pairwise":
             gcd_result = scan_moduli(moduli, gcd_fn=gcd_fn)
         else:
-            from .attacks.batch_gcd import scan_moduli_batch
-            gcd_result = scan_moduli_batch(moduli, gcd_fn=gcd_fn, resolve_full_gcd=True)
+            gcd_result = scan_moduli_batch(moduli,
+                                           gcd_fn=gcd_fn,
+                                           resolve_full_gcd=True)
         gcd_seconds = (perf_counter_ns() - start) / 1_000_000_000
         counts.update({name: gcd_result[name] for name in SCAN_COUNTERS})
         gcd_findings = gcd_result["findings"]
@@ -61,18 +71,23 @@ def run_audit(public_records, mode="combined", gcd_backend="batch",
         gcd_finding = gcd_findings.get(n)
         finding = {
             "n": n,
-            "status": gcd_finding["status"] if gcd_finding else "budget_exhausted",
-            "p": gcd_finding["p"] if gcd_finding else None,
-            "q": gcd_finding["q"] if gcd_finding else None,
-            "resolution_method": gcd_finding["resolution_method"] if gcd_finding else None,
-            "gcd_status": gcd_finding["status"] if gcd_finding else "not_run",
+            "status": "budget_exhausted",
+            "p": None,
+            "q": None,
+            "resolution_method": None,
+            "gcd_status": "not_run",
             "fermat_status": "not_run",
             "fermat_candidate_tests": 0,
             "fermat_scan_seconds": 0.0,
         }
+        if gcd_finding is not None:
+            for field in ("status", "p", "q", "resolution_method"):
+                finding[field] = gcd_finding[field]
+            finding["gcd_status"] = gcd_finding["status"]
         # Validate before deciding to skip the other check.
         if finding["status"] == "factored":
-            finding["p"], finding["q"] = validate_factors(n, finding["p"], finding["q"])
+            finding["p"], finding["q"] = validate_factors(
+                n, finding["p"], finding["q"])
         elif mode in ("fermat", "combined"):
             start = perf_counter_ns()
             result = fermat_factor(n, fermat_budget)
@@ -89,84 +104,37 @@ def run_audit(public_records, mode="combined", gcd_backend="batch",
     scan_seconds = (perf_counter_ns() - scan_start) / 1_000_000_000
 
     # Propagate one factorization to every ID, retaining its own exponent.
-    records = [{**findings[record["n"]], "key_id": record["key_id"], "e": record["e"]}
-               for record in normalized["public_records"]]
-    recovered = [record for record in records if record["status"] == "factored"]
-    return {
-        "mode": mode, "gcd_backend": gcd_backend, "fermat_budget": fermat_budget,
-        "findings": findings, "normalized": normalized,
-        "record_findings": records, "recovered_records": recovered, "recovered_keys": recovered,
-        "num_records": normalized["num_records"], "num_unique_moduli": len(moduli),
-        "duplicate_extra_records": normalized["duplicate_extra_records"],
-        "preprocessing_seconds": preprocessing_seconds, "scan_seconds": scan_seconds,
-        "gcd_scan_seconds": gcd_seconds, "fermat_scan_seconds": fermat_seconds,
-        **counts,
-        "fermat_candidate_tests": sum(f["fermat_candidate_tests"] for f in findings.values()),
-        "fermat_attempted_moduli": sum(f["fermat_status"] != "not_run" for f in findings.values()),
-        "fermat_exhausted_moduli": sum(f["fermat_status"] == "budget_exhausted" for f in findings.values()),
-    }
-
-
-def audit_public_keys(public_records: Iterable[PublicKeyRecord],
-                      gcd_fn: Optional[GCDBackend] = None, *,
-                      algorithm: GCDAlgorithmInput = "pairwise") -> AuditReport:
-    """Run a GCD audit and map findings to every original record ID.
-
-    Duplicates retain their exponents and add no GCD calls. AuditReport defines
-    the per-modulus counters and record aliases.
-    """
-    if algorithm == "batch":
-        algorithm = "batch_with_fallback"
-    if algorithm not in ("pairwise", "batch_with_fallback", "batch_raw"):
-        raise ValueError("unknown audit algorithm")
-    if algorithm != "pairwise":
-        from .attacks.batch_gcd import scan_moduli_batch
-
-    start = perf_counter_ns()
-    normalized = normalize_public_keys(public_records)
-    preprocessing_seconds = (perf_counter_ns() - start) / 1_000_000_000
-
-    start = perf_counter_ns()
-    if algorithm == "pairwise":
-        scan_result = scan_moduli(normalized["unique_moduli"], gcd_fn=gcd_fn)
-    else:
-        scan_result = scan_moduli_batch(normalized["unique_moduli"], gcd_fn=gcd_fn,
-                                       resolve_full_gcd=algorithm != "batch_raw")
-    scan_seconds = (perf_counter_ns() - start) / 1_000_000_000
-
     record_findings = []
     for record in normalized["public_records"]:
-        finding = scan_result["findings"][record["n"]]
         record_findings.append({
+            **findings[record["n"]],
             "key_id": record["key_id"],
-            "n": record["n"],
             "e": record["e"],
-            "status": finding["status"],
-            "p": finding["p"],
-            "q": finding["q"],
-            "resolution_method": finding["resolution_method"],
         })
-    recovered = [record for record in record_findings if record["status"] == "factored"]
+    recovered = [
+        record for record in record_findings if record["status"] == "factored"
+    ]
     return {
-        **scan_result,
+        "mode": mode,
+        "gcd_backend": gcd_backend,
+        "fermat_budget": fermat_budget,
+        "findings": findings,
         "normalized": normalized,
         "record_findings": record_findings,
         "recovered_records": recovered,
-        "recovered_keys": recovered,
         "num_records": normalized["num_records"],
-        "num_unique_moduli": normalized["num_unique_moduli"],
+        "num_unique_moduli": len(moduli),
         "duplicate_extra_records": normalized["duplicate_extra_records"],
         "preprocessing_seconds": preprocessing_seconds,
         "scan_seconds": scan_seconds,
-        "gcd_comparisons": scan_result["gcd_calls"],
+        "gcd_scan_seconds": gcd_seconds,
+        "fermat_scan_seconds": fermat_seconds,
+        **counts,
+        "fermat_candidate_tests": sum(
+            finding["fermat_candidate_tests"] for finding in findings.values()),
+        "fermat_attempted_moduli": sum(finding["fermat_status"] != "not_run"
+                                       for finding in findings.values()),
+        "fermat_exhausted_moduli": sum(
+            finding["fermat_status"] == "budget_exhausted"
+            for finding in findings.values()),
     }
-
-
-def measure_shared_prime_scan(public_keys, algorithm="pairwise") -> tuple[AuditReport, float]:
-    """Return the audit report and scan-only seconds.
-
-    Preprocessing is timed separately; propagation, I/O, generation, OAEP and
-    evaluation are outside the scan.
-    """
-    result = audit_public_keys(public_keys, algorithm=algorithm)
-    return result, result["scan_seconds"]

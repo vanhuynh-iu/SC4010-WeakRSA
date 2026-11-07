@@ -1,9 +1,7 @@
-"""Van's Euclidean arithmetic and RSA private-key recovery.
+"""Euclidean arithmetic and RSA private-key recovery.
 
 PyCryptodome supplies primality checks, key construction, and OAEP-SHA256.
 """
-
-from .records import AuditReport
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
@@ -26,7 +24,8 @@ def validate_factors(n: int, p: int, q: int) -> tuple[int, int]:
     if p <= 2 or q <= 2 or p % 2 == 0 or q % 2 == 0 or p == q:
         raise ValueError("factors must be distinct odd primes")
     if p * q != n:
-        raise ValueError("recovered factors do not multiply to public modulus n")
+        raise ValueError(
+            "recovered factors do not multiply to public modulus n")
     if not isPrime(p) or not isPrime(q):
         raise ValueError("recovered factors must be prime")
     return tuple(sorted((p, q)))
@@ -35,7 +34,12 @@ def validate_factors(n: int, p: int, q: int) -> tuple[int, int]:
 def extended_gcd(a: int, b: int) -> tuple[int, int, int]:
     """Return (g, x, y) with a*x + b*y = g = gcd(a, b).
 
-    Inputs are nonnegative built-in integers; (0, 0) returns (0, 1, 0).
+    Args:
+        a: First nonnegative built-in integer.
+        b: Second nonnegative built-in integer.
+
+    Returns:
+        The GCD and its two Bezout coefficients. For (0, 0), return (0, 1, 0).
     """
     _require_integer(a, "a")
     _require_integer(b, "b")
@@ -68,8 +72,8 @@ def mod_inverse(a: int, modulus: int) -> int:
         raise ValueError("modulus must be greater than one")
 
     # Reduce signed a for extended_gcd's nonnegative domain.
-    gcd, coefficient, _ = extended_gcd(a % modulus, modulus)
-    if gcd != 1:
+    divisor, coefficient, _ = extended_gcd(a % modulus, modulus)
+    if divisor != 1:
         raise ValueError("a has no modular inverse for this modulus")
     return coefficient % modulus
 
@@ -77,8 +81,13 @@ def mod_inverse(a: int, modulus: int) -> int:
 def recover_private_key(p: int, q: int, e: int) -> int:
     """Return private exponent d from distinct odd primes p and q.
 
-    Require odd 1 < e < phi(n) and gcd(e, phi(n)) == 1; invalid values raise
-    ValueError.
+    Args:
+        p: First odd prime factor of the RSA modulus.
+        q: Second odd prime factor, distinct from p.
+        e: Odd public exponent with 1 < e < phi(n), coprime to phi(n).
+
+    Returns:
+        d = e**-1 mod phi(n), where phi(n) = (p-1)*(q-1).
     """
     for name, value in (("p", p), ("q", q), ("e", e)):
         _require_integer(value, name)
@@ -113,9 +122,8 @@ def encrypt_message(message: bytes, n: int, e: int) -> bytes:
     return PKCS1_OAEP.new(public_key, hashAlgo=SHA256).encrypt(message)
 
 
-def decrypt_with_recovered_key(
-    ciphertext: bytes, n: int, e: int, p: int, q: int
-) -> bytes:
+def decrypt_with_recovered_key(ciphertext: bytes, n: int, e: int, p: int,
+                               q: int) -> bytes:
     """Decrypt OAEP-SHA256 with a key reconstructed from attack factors.
 
     Check p*q against the original n before deriving d. Invalid keys, factor
@@ -130,27 +138,41 @@ def decrypt_with_recovered_key(
     _require_integer(p, "p")
     _require_integer(q, "q")
     if p * q != n:
-        raise ValueError("recovered factors do not multiply to public modulus n")
+        raise ValueError(
+            "recovered factors do not multiply to public modulus n")
 
     d = recover_private_key(p, q, e)
     recovered_key = RSA.construct((n, e, d, p, q), consistency_check=True)
     return PKCS1_OAEP.new(recovered_key, hashAlgo=SHA256).decrypt(ciphertext)
 
 
-def recover_messages(public_keys, scan_result: AuditReport) -> dict[str, bytes]:
-    """Decrypt using only factors returned by the attack, without ground truth."""
-    public_by_id = {key["key_id"]: key for key in public_keys}
+def recover_messages(public_keys, scan_result: dict) -> dict[str, bytes]:
+    """Decrypt ciphertexts using attack factors and each record's exponent.
+
+    Args:
+        public_keys: The original public records, with optional ciphertexts.
+        scan_result: A GCD or integrated audit report with recovered_records.
+
+    Returns:
+        Recovered plaintext bytes by key ID. Records without ciphertext are
+        skipped. No generator truth or expected messages are used.
+    """
+    public_by_id = {record["key_id"]: record for record in public_keys}
     messages = {}
-    for factors in scan_result["recovered_records"]:
-        key_id = factors["key_id"]
-        key = public_by_id[key_id]
-        if factors["e"] != key["e"]:
-            raise ValueError("recovered record exponent does not match its public record")
-        if factors["n"] != key["n"] or factors["p"] * factors["q"] != key["n"]:
-            raise ValueError("attack factors do not match the original public modulus")
-        if "ciphertext" not in key:
+    for recovered_record in scan_result["recovered_records"]:
+        key_id = recovered_record["key_id"]
+        public_record = public_by_id[key_id]
+        if recovered_record["e"] != public_record["e"]:
+            raise ValueError(
+                "recovered record exponent does not match its public record")
+        if (recovered_record["n"] != public_record["n"] or
+                recovered_record["p"] * recovered_record["q"]
+                != public_record["n"]):
+            raise ValueError(
+                "attack factors do not match the original public modulus")
+        if "ciphertext" not in public_record:
             continue
         messages[key_id] = decrypt_with_recovered_key(
-            key["ciphertext"], key["n"], key["e"], factors["p"], factors["q"]
-        )
+            public_record["ciphertext"], public_record["n"], public_record["e"],
+            recovered_record["p"], recovered_record["q"])
     return messages

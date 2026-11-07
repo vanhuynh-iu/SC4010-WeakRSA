@@ -1,20 +1,92 @@
-"""Adapt Krystal's unchanged close-prime generator to separated records."""
+"""Krystal's prime generators and the shared public/private record format."""
 
 from math import gcd
 from typing import Optional
 
-from ...records import GeneratedKeyCase
-from .close_primes_original import generate_close_prime_key as _generate_close_prime_key
-from ...key_recovery import validate_factors
+from Crypto.Util.number import GCD
+from Crypto.Util.number import getPrime
+from Crypto.Util.number import inverse
+from Crypto.Util.number import isPrime
+
+from rsa_auditor.key_recovery import validate_factors
+
+MAX_GENERATION_ATTEMPTS = 100
 
 
-_MAX_GENERATION_ATTEMPTS = 100
+def _generate_close_prime_key(bits, gap_bits, e=65537):
+    """Generate a complete RSA key using Krystal's controlled prime gap loop."""
+    prime_bits = bits // 2
+    while True:
+        p = getPrime(prime_bits)
+        candidate = p + (2**gap_bits)
+        if candidate % 2 == 0:
+            candidate += 1
+        while not isPrime(candidate):
+            candidate += 2
+        q = candidate
+
+        if p == q:
+            continue
+        n = p * q
+        if n.bit_length() != bits:
+            continue
+        phi = (p - 1) * (q - 1)
+        if GCD(e, phi) != 1:
+            continue
+        d = inverse(e, phi)
+        return {
+            "p": p,
+            "q": q,
+            "n": n,
+            "e": e,
+            "d": d,
+            "phi": phi,
+            "gap": abs(q - p),
+        }
 
 
-def generate_close_prime_key(modulus_bits: int = 2048, e: int = 65537, *,
-                             target_gap: Optional[int] = None,
-                             gap_bits: Optional[int] = None) -> GeneratedKeyCase:
-    """Return a public key and separate truth using Krystal's generator.
+def generate_prime_key(bits, e=65537):
+    """Generate a complete RSA key from two independent primes.
+
+    Args:
+        bits: Requested modulus bit length, using equal-sized prime draws.
+        e: Public exponent, retried until it is coprime to phi(n).
+
+    Returns:
+        The original generator's key dictionary, including private values.
+    """
+    prime_bits = bits // 2
+    while True:
+        p = getPrime(prime_bits)
+        q = getPrime(prime_bits)
+        if p == q:
+            continue
+        n = p * q
+        if n.bit_length() != bits:
+            continue
+        phi = (p - 1) * (q - 1)
+        if GCD(e, phi) != 1:
+            continue
+        d = inverse(e, phi)
+        return {
+            "p": p,
+            "q": q,
+            "n": n,
+            "e": e,
+            "d": d,
+            "phi": phi,
+            "gap": abs(q - p),
+        }
+
+
+def generate_close_prime_key(
+    modulus_bits: int = 2048,
+    e: int = 65537,
+    *,
+    target_gap: Optional[int] = None,
+    gap_bits: Optional[int] = None,
+) -> dict:
+    """Return separate public records and private truth for a close-prime key.
 
     gap_bits selects its starting separation 2**gap_bits; the actual prime gap
     can be larger because q is the next prime. target_gap is an alternative
@@ -22,6 +94,20 @@ def generate_close_prime_key(modulus_bits: int = 2048, e: int = 65537, *,
     The default exponent, modulus_bits//4 + 3, gives more than the first Fermat
     candidate for the supported sizes. Odd sizes and excessive separations are
     rejected before calling the original generator's retry loop.
+
+    Args:
+        modulus_bits: Even modulus bit length of at least 32.
+        e: Odd public exponent greater than one.
+        target_gap: Optional power-of-two starting separation.
+        gap_bits: Optional exponent for the starting separation.
+
+    Returns:
+        A neutral public ID, n and e, plus a separate private truth dictionary.
+
+    Raises:
+        TypeError: A supplied parameter is not a built-in integer.
+        ValueError: A requested size, exponent or gap is unsupported.
+        RuntimeError: Generation returns invalid data or exhausts retries.
     """
     if type(modulus_bits) is not int or type(e) is not int:
         raise TypeError("modulus_bits and e must be built-in Python integers")
@@ -44,26 +130,37 @@ def generate_close_prime_key(modulus_bits: int = 2048, e: int = 65537, *,
     if type(gap_bits) is not int:
         raise TypeError("gap_bits must be a built-in Python integer")
     if not 0 <= gap_bits <= modulus_bits // 2 - 2:
-        raise ValueError("gap_bits must be between zero and modulus_bits//2 - 2")
+        raise ValueError(
+            "gap_bits must be between zero and modulus_bits//2 - 2")
 
-    for _ in range(_MAX_GENERATION_ATTEMPTS):
-        key = _generate_close_prime_key(bits=modulus_bits, gap_bits=gap_bits, e=e)
+    for _ in range(MAX_GENERATION_ATTEMPTS):
+        key = _generate_close_prime_key(bits=modulus_bits,
+                                        gap_bits=gap_bits,
+                                        e=e)
         if not isinstance(key, dict) or not {"n", "e", "p", "q"}.issubset(key):
             raise RuntimeError("close-prime generator returned a malformed key")
         n = key["n"]
         p, q = validate_factors(n, key["p"], key["q"])
-        if n.bit_length() != modulus_bits or type(key["e"]) is not int or key["e"] != e:
-            raise RuntimeError("close-prime generator returned inconsistent RSA parameters")
+        if (n.bit_length() != modulus_bits or type(key["e"]) is not int or
+                key["e"] != e):
+            raise RuntimeError(
+                "close-prime generator returned inconsistent RSA parameters")
         if q - p < 1 << gap_bits:
-            raise RuntimeError("close-prime generator returned less than the requested gap")
-        # The original checks gcd(e, phi), but p=e or q=e can still produce a
-        # key rejected by RSA recovery. Retry these rare cases without editing it.
+            raise RuntimeError(
+                "close-prime generator returned less than the requested gap")
+        # Coprimality with phi does not rule out p=e or q=e.
         if gcd(e, n) != 1 or gcd(e, (p - 1) * (q - 1)) != 1:
             continue
         return {
-            "public_key": {"key_id": "key_001", "n": n, "e": e},
+            "public_key": {
+                "key_id": "key_001",
+                "n": n,
+                "e": e
+            },
             "private_truth": {
-                "p": p, "q": q, "case_type": "close_prime",
+                "p": p,
+                "q": q,
+                "case_type": "close_prime",
                 "actual_gap": q - p,
                 "intended_weak_generation": True,
                 "observable_shared_factor": False,
@@ -71,5 +168,4 @@ def generate_close_prime_key(modulus_bits: int = 2048, e: int = 65537, *,
         }
     raise RuntimeError(
         "Could not generate an RSA-compatible close-prime key within "
-        f"{_MAX_GENERATION_ATTEMPTS} attempts"
-    )
+        f"{MAX_GENERATION_ATTEMPTS} attempts")

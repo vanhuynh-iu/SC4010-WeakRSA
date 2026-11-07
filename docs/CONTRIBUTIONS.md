@@ -1,5 +1,25 @@
 # Contributions and integration record
 
+This is a chronological record: paths in older sections describe those commits.
+Use the root README for the current tree and results/README.md for fresh findings.
+
+## Current authorship declaration
+
+Van confirmed that Krystal's original algorithm logic was written without AI.
+This confirms the reported origin of her original code, not student-only
+authorship of the combined modules after AI-assisted edits.
+
+| Work | Declaration supported by this session |
+| --- | --- |
+| Krystal's original Fermat baseline, filters/wheel, and prime-generation logic | Reported by Van as written by Krystal without AI; original source is on `close-primes` at `bd60ccb`. |
+| Van's GCD implementation | Earlier repository work exists, but non-AI authorship has not been confirmed. Current files include AI-assisted changes. |
+| Combined auditor, adapters, evaluation, experiment runners, tests and cleanup | AI-assisted integration; this session does not support declaring these as written without AI. |
+
+For the professor's slide, name specific functions actually written by each
+student without AI. Reading, testing, formatting or understanding generated
+code does not establish that the student wrote it without AI. The current
+declaration must not describe all code as non-AI-written.
+
 ## Existing work
 
 Van's GCD work is preserved from commit `7e09afc`: shared-prime generators,
@@ -81,3 +101,120 @@ PyCryptodome and Matplotlib; optional dependencies for removed historical script
 were dropped. Existing tests and all measured data were retained. Original
 branches, ignored user history and the working Python environment were preserved.
 Earlier sections and migration maps describe the layouts at their stated dates.
+
+## Fresh measurements and archive removal — 8 November 2026
+
+At Van's request, Codex first captured the actual 31 previously uncommitted
+archive/learning files in Git commit 481dbaa, verified every saved blob, and
+removed their working copies. Old tracked result sets were retained until
+all new runs passed, then removed from the current tree along with obsolete
+layout-map copies. Their exact earlier versions remain in ancestor commits
+and the unchanged gcd/close-primes branches.
+
+Codex added the AI-assisted paired Fermat pilot runner and seven tests. The
+original student algorithm functions were reused unchanged. The new fixture
+contains nine independent saved RSA-2048 keys; component methods share each
+input and position budget. GCD/auditor reruns intentionally reuse existing
+public fixtures. All research timing jobs ran sequentially from clean producer
+commit 4c552fd; the new raw files, summaries and metadata record actual results.
+
+The fresh result tree has comparison, gcd correctness/coverage/scalability/
+stress, a paired Fermat pilot, and one audit report. Old performance numbers
+were not copied into the new findings. All 263 tests passed before measurement.
+The new component study's settings/timing boundary differ from the old Fermat
+studies and from the integrated audit; claims must use their stated scopes.
+
+## Readability cleanup — 8 November 2026
+
+At Van's request, Codex combined the retained Fermat kernels and bounded
+entrypoint into attacks/fermat.py, and the close-prime generation methods and
+dataset entrypoint into datasets/generators/close_primes.py. Separate
+_original.py modules and their unused standalone demo blocks were removed.
+Krystal's algorithms are retained; these current modules are no longer
+byte-for-byte copies. The unchanged originals remain on close-primes.
+
+Codex simplified conditions and local names across the active implementation,
+added concise explanatory docstrings and applied Google-style formatting.
+Dataset callers import storage functions directly from datasets.storage;
+builder also retains its existing exports for compatibility. Existing
+interfaces for audits, algorithms, reports and experiment counters are retained.
+Measurements and their producer metadata were preserved; this cleanup does not
+relabel them as new runs. These edits are AI-assisted integration work.
+
+Verification passed all 263 existing tests and 72 direct comparisons of the
+retained Fermat kernels with close-primes at bd60ccb on the nine saved pilot
+keys. The combined demo still recovers four moduli / five records and verifies
+all five plaintexts at budget 256. Google formatting and the selected style
+and error checks pass; the saved research measurements were not overwritten.
+
+## Reduce scaffolding — 8 November 2026
+
+At Van's request, Codex removed the 20 annotation-only schema/protocol classes
+in records.py. Ordinary dictionaries/lists now carry records; constants.py
+retains the two shared algorithm/counter tuples. Three batch-GCD forwarding
+helpers were folded into compute_batch_gcds, the unused production timing
+wrapper was removed, and its existing tests now call audit_public_keys
+directly with all assertions retained. The duplicate comparison CLI, CSV
+serializer, counter-check helper and private-reference builder were removed;
+the studies reuse existing serialization and independent evaluation.
+
+Google-based formatting keeps dictionary keys and values together where they
+fit. Runtime validation, complete pairwise scans, batch ambiguity resolution,
+Fermat budgets, result fields and scientific measurement boundaries remain.
+Krystal's attack logic was not rewritten. The simplification remains
+AI-assisted; changing coding style does not establish non-AI authorship.
+
+All 263 tests passed after simplification. The combined demonstration still
+recovers four moduli / five records and verifies five plaintexts at budget 256.
+Application source decreased from 6,051 to 5,486 physical lines in this pass;
+the source contains no schema/protocol classes. Formatting and the selected
+lint/error checks passed. Existing datasets and measured results were retained.
+
+## Direct command entrypoints — 8 November 2026
+
+At Van's request, Codex removed the three forwarding __main__.py files. Run
+the existing cli.py modules directly with python -m rsa_auditor.cli,
+python -m rsa_auditor.datasets.cli or python -m rsa_auditor.experiments.cli.
+Regular-package __init__.py markers remain, including evaluation's function
+exports. Active command documentation was updated; historical measurement
+metadata retains the source paths and hashes of its recorded producer.
+
+## One audit path and evaluator — 8 November 2026
+
+At Van's request, Codex consolidated execution into run_audit and merged the
+evaluation package into evaluation.py. GCD correctness/coverage now use that
+same audit and private evaluator. The duplicate audit_public_keys entrypoint,
+legacy GCD grader, recovered_keys alias and dataset-storage re-exports were
+removed; callers and tests use the direct public APIs. Record findings are
+validated once, then the recovered subset is checked against those records.
+Stored GCD expectation IDs are checked independently against prime ownership.
+
+The unused debug-witness output was removed. Remainder traversal assumes the
+unchanged tree produced by build_product_tree rather than revalidating every
+internal tree product; public moduli, backend results and recovered factors
+are still checked. Tests specific to that retired internal-tree rejection and
+to removed storage aliases were retired, while numeric tree coverage expanded.
+
+Dataset assembly reuses factor validation per unique modulus. The Fermat pilot
+uses four explicit kernel entries, one fixture validator, shared serialization
+and indexed same-key baseline times. Krystal's kernels were not rewritten.
+All seven experiment commands remain. New correctness/coverage timing metadata
+explicitly includes common factor validation; scaling/stress kernel timings
+keep their earlier boundary. Saved research results were not overwritten.
+
+Verification passed 262 tests, the demo/dataset commands and all seven
+experiment modes. The command checks used temporary outputs, not the checked-in
+research results. An independent comparison against committed source 02c7555
+matched 28 GCD fixture/API combinations exactly for factors, statuses, methods,
+raw values, counters and observed call order, excluding only removed debug
+output. These simplification changes remain AI-assisted work.
+
+## Dataset names and unused demo — 8 November 2026
+
+At Van's request to clarify the old dataset names, Codex removed the unused
+van_demo public/private fixture and renamed van_mixed to gcd_mixed and
+van_coverage to gcd_coverage. Both public inputs and matching private answers
+moved together, with unchanged bytes and checksum manifests. Live defaults,
+command examples and the relevant CLI route test use the new purpose-based
+names. Existing measured CSV/JSON/figure files retain their original dataset
+identities and fingerprints. All experiment commands remain supported.

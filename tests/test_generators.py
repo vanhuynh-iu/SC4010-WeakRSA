@@ -118,7 +118,7 @@ class SharedPrimeGenerationTests(unittest.TestCase):
 
     def test_generation_failure_is_bounded_and_explicit(self):
         # Bound retries even with a stuck prime source.
-        with patch("rsa_auditor.datasets.generators.shared_primes._MAX_PRIME_ATTEMPTS", 3):
+        with patch("rsa_auditor.datasets.generators.shared_primes.MAX_PRIME_ATTEMPTS", 3):
             with patch("rsa_auditor.datasets.generators.shared_primes.getPrime", return_value=32771) as source:
                 with self.assertRaisesRegex(RuntimeError, "3 attempts"):
                     generate_shared_prime_keys(modulus_bits=32)
@@ -267,7 +267,7 @@ class MixedDatasetTests(unittest.TestCase):
                 with self.assertRaises(expected_error):
                     generate_mixed_key_dataset(**kwargs)
         # This 17-bit prime exceeds the allowed odd-size range.
-        with patch("rsa_auditor.datasets.generators.shared_primes._MAX_PRIME_ATTEMPTS", 3):
+        with patch("rsa_auditor.datasets.generators.shared_primes.MAX_PRIME_ATTEMPTS", 3):
             with patch("rsa_auditor.datasets.generators.shared_primes.getPrime", return_value=131071) as source:
                 with self.assertRaisesRegex(RuntimeError, "3 attempts"):
                     generate_mixed_key_dataset(33)

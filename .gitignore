@@ -53,5 +53,3 @@ tempCodeRunnerFile.py
 *.log
 
 # Historical local files: preserve on disk, exclude from Git
-/results/source_archive/
-/results/learning/

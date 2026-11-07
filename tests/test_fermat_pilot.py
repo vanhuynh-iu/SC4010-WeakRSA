@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import Mock
 from unittest.mock import patch
 
 from rsa_auditor.datasets.storage import load_dataset, save_dataset
@@ -72,7 +73,7 @@ class FermatPilotTests(unittest.TestCase):
             directory = self.save_case(Path(root) / "input")
             output = Path(root) / "output"
             calls = []
-            real = pilot._kernels()
+            real = pilot.KERNELS.copy()
             def observed(name, kernel):
                 def run(n, budget, **options):
                     self.assertIs(type(n), int)
@@ -80,9 +81,9 @@ class FermatPilotTests(unittest.TestCase):
                     calls.append((name, n, budget))
                     return kernel(n, budget, **options)
                 return run
-            kernels = {name: (observed(name, kernel), options) for name, (kernel, options) in real.items()}
+            kernels = {name: (observed(name, kernel), moduli) for name, (kernel, moduli) in real.items()}
             original = (directory / "public.json").read_bytes()
-            with patch.object(pilot, "_kernels", return_value=kernels), \
+            with patch.object(pilot, "KERNELS", kernels), \
                  patch.object(pilot, "generate_close_prime_key", side_effect=AssertionError("no generation while measuring")):
                 summary = pilot.run_fermat_pilot(directory, output, [1010, 1011])
             self.assertTrue(summary["all_runs_ok"])
@@ -100,7 +101,7 @@ class FermatPilotTests(unittest.TestCase):
             self.assertEqual(len({row["method_order"] for row in rows}), 2)
             metadata = json.loads((output / "run_metadata.json").read_text())
             self.assertEqual(metadata["public_sha256"], hashlib.sha256(original).hexdigest())
-            self.assertIn("rsa_auditor/attacks/fermat_original.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/attacks/fermat.py", metadata["source_sha256"])
             self.assertIn("factor validation", metadata["excluded_from_timing"])
 
     def test_first_candidate_counts_as_one_for_every_method(self):
@@ -116,14 +117,14 @@ class FermatPilotTests(unittest.TestCase):
             with self.subTest(method=method), TemporaryDirectory() as root:
                 directory = self.save_case(Path(root) / "input")
                 output = Path(root) / "output"
-                kernels = pilot._kernels()
-                kernel, options = kernels[method]
+                kernels = pilot.KERNELS.copy()
+                kernel, moduli = kernels[method]
                 def wrong(n, budget, **options):
                     result = list(kernel(n, budget, **options))
                     result[index] = 1000 if index == 4 else result[index] + 1
                     return tuple(result)
-                kernels[method] = (wrong, options)
-                with patch.object(pilot, "_kernels", return_value=kernels):
+                kernels[method] = (wrong, moduli)
+                with patch.object(pilot, "KERNELS", kernels):
                     summary = pilot.run_fermat_pilot(directory, output, [1011])
                 self.assertFalse(summary["all_runs_ok"])
                 failed = next(row for row in self.rows(output) if row["method"] == method)
@@ -138,7 +139,10 @@ class FermatPilotTests(unittest.TestCase):
             output = Path(root) / "output"
             output.mkdir()
             (output / "summary.json").write_text("preserve")
-            with patch.object(pilot, "_kernels", side_effect=AssertionError("must not measure")):
+            blocked_kernel = Mock(side_effect=AssertionError("must not measure"))
+            kernels = {name: (blocked_kernel, moduli)
+                       for name, (_, moduli) in pilot.KERNELS.items()}
+            with patch.object(pilot, "KERNELS", kernels):
                 with self.assertRaises(FileExistsError):
                     pilot.run_fermat_pilot(directory, output)
                 for budgets in ([], [1, 1], [0], [True], [-1]):
@@ -148,6 +152,7 @@ class FermatPilotTests(unittest.TestCase):
                 public_path.write_text(public_path.read_text() + " ")
                 with self.assertRaisesRegex(ValueError, "checksum"):
                     pilot.run_fermat_pilot(directory, Path(root) / "unused", [1])
+            blocked_kernel.assert_not_called()
             self.assertEqual((output / "summary.json").read_text(), "preserve")
 
     def test_cli_pilot_and_stress_routes_use_fresh_defaults_without_fixed_profile_generation(self):
@@ -161,7 +166,7 @@ class FermatPilotTests(unittest.TestCase):
              patch.object(cli, "prepare_scalability_datasets", side_effect=AssertionError("stress must reuse mixed input")), \
              redirect_stdout(StringIO()):
             self.assertEqual(cli.main(["--mode", "stress"]), 0)
-            stress.assert_called_once_with(["data/public/van_mixed"], "results/gcd/stress", 5, 1, "euclidean", True)
+            stress.assert_called_once_with(["data/public/gcd_mixed"], "results/gcd/stress", 5, 1, "euclidean", True)
 
 
 if __name__ == "__main__":

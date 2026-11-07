@@ -24,7 +24,7 @@ from rsa_auditor.attacks.batch_gcd import scan_moduli_batch
 from rsa_auditor.datasets.generators.shared_primes import generate_shared_prime_keys
 from rsa_auditor.key_recovery import encrypt_message
 from rsa_auditor.attacks.pairwise_gcd import scan_moduli
-from rsa_auditor.audit_pipeline import audit_public_keys
+from rsa_auditor.audit_pipeline import run_audit
 from rsa_auditor.datasets.storage import save_dataset
 
 
@@ -401,14 +401,14 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_algorithm_error_is_a_row_and_not_fake_success(self):
-        def fail_batch(public, gcd_fn=None, *, algorithm="pairwise"):
-            if algorithm == "batch_with_fallback":
+        def fail_batch(public, *, mode, gcd_backend, gcd_fn=None):
+            if gcd_backend == "batch":
                 raise RuntimeError("intentional batch failure")
-            return audit_public_keys(public, gcd_fn=gcd_fn, algorithm=algorithm)
+            return run_audit(public, mode=mode, gcd_backend=gcd_backend, gcd_fn=gcd_fn)
         with TemporaryDirectory() as root:
             directory = self.save_case(Path(root) / "toy", self.toy_case())
             output = Path(root) / "checks"
-            with patch("rsa_auditor.experiments.gcd_checks.audit_public_keys", side_effect=fail_batch):
+            with patch("rsa_auditor.experiments.gcd_checks.run_audit", side_effect=fail_batch):
                 summary = gcd_checks.run_shared_prime_correctness([directory], output)
             self.assertFalse(summary["all_runs_ok"])
             rows = self.read_rows(output, "shared_prime_correctness.csv")
@@ -425,16 +425,14 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_case(Path(root) / "toy", case)
             output = Path(root) / "checks"
-            summary = gcd_checks.run_shared_prime_correctness([directory], output)
-            self.assertFalse(summary["all_runs_ok"])
-            for row in self.read_rows(output, "shared_prime_correctness.csv"):
-                self.assertEqual(row["run_status"], "error")
-                self.assertIn("observed dataset", row["error"])
+            with self.assertRaisesRegex(ValueError, "observed dataset"):
+                gcd_checks.run_shared_prime_correctness([directory], output)
+            self.assertFalse(output.exists())
 
-    def test_mismatching_algorithms_are_retained_as_failed_checks(self):
-        def omit_one(public, gcd_fn=None, *, algorithm="pairwise"):
-            result = audit_public_keys(public, gcd_fn=gcd_fn, algorithm=algorithm)
-            if algorithm == "batch_with_fallback":
+    def test_malformed_algorithm_report_is_retained_as_failed_check(self):
+        def omit_one(public, *, mode, gcd_backend, gcd_fn=None):
+            result = run_audit(public, mode=mode, gcd_backend=gcd_backend, gcd_fn=gcd_fn)
+            if gcd_backend == "batch":
                 result["findings"][253].update(status="no_shared_factor_in_dataset", p=None, q=None,
                                                 resolution_method=None)
                 result["recovered_records"] = [r for r in result["recovered_records"] if r["n"] != 253]
@@ -442,12 +440,13 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
         with TemporaryDirectory() as root:
             directory = self.save_case(Path(root) / "toy", self.toy_case())
             output = Path(root) / "checks"
-            with patch("rsa_auditor.experiments.gcd_checks.audit_public_keys", side_effect=omit_one):
+            with patch("rsa_auditor.experiments.gcd_checks.run_audit", side_effect=omit_one):
                 summary = gcd_checks.run_shared_prime_correctness([directory], output)
             self.assertFalse(summary["all_runs_ok"])
             rows = self.read_rows(output, "shared_prime_correctness.csv")
-            self.assertEqual({row["run_status"] for row in rows}, {"mismatch"})
-            self.assertEqual({row["algorithms_agree"] for row in rows}, {"False"})
+            self.assertEqual(rows[0]["run_status"], "comparison_incomplete")
+            self.assertEqual(rows[1]["run_status"], "error")
+            self.assertIn("independently predicted stages", rows[1]["error"])
 
     def test_outputs_are_not_overwritten(self):
         with TemporaryDirectory() as root:
@@ -455,13 +454,13 @@ class CorrectnessCoverageCheckTests(unittest.TestCase):
             output = Path(root) / "checks"
             gcd_checks.run_shared_prime_correctness([directory], output)
             original = {p.name: p.read_bytes() for p in output.iterdir()}
-            with patch("rsa_auditor.experiments.gcd_checks.audit_public_keys", side_effect=AssertionError("must not run")):
+            with patch("rsa_auditor.experiments.gcd_checks.run_audit", side_effect=AssertionError("must not run")):
                 with self.assertRaises(FileExistsError):
                     gcd_checks.run_shared_prime_correctness([directory], output)
             self.assertEqual({p.name: p.read_bytes() for p in output.iterdir()}, original)
 
     def test_import_and_cli_modes_do_not_generate_or_benchmark(self):
-        with patch("rsa_auditor.audit_pipeline.audit_public_keys", side_effect=AssertionError("no scan on import")), \
+        with patch("rsa_auditor.audit_pipeline.run_audit", side_effect=AssertionError("no scan on import")), \
              patch("rsa_auditor.datasets.storage.load_dataset", side_effect=AssertionError("no load on import")):
             importlib.reload(cli)
         importlib.reload(cli)

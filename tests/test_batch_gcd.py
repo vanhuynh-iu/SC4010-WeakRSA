@@ -35,9 +35,9 @@ class ProductAndRemainderTreeTests(unittest.TestCase):
         self.assertEqual(build_product_tree([187]), [[187]])
         self.assertEqual(compute_leaf_remainders([[187]]), [187])
 
-    def test_odd_three_five_seven_leaf_levels_and_direct_remainders(self):
+    def test_varied_leaf_counts_match_direct_remainders(self):
         leaves = [2, 3, 5, 7, 11, 13, 17]
-        for count in (3, 5, 7):
+        for count in (2, 3, 4, 5, 6, 7):
             values = leaves[:count]
             with self.subTest(count=count):
                 tree = build_product_tree(values)
@@ -78,17 +78,6 @@ class ProductAndRemainderTreeTests(unittest.TestCase):
             with self.subTest(invalid=invalid):
                 with self.assertRaises(ValueError):
                     build_product_tree([3, invalid])
-
-    def test_remainder_helper_rejects_malformed_tree(self):
-        for tree in ([[]], [[3, 5]], [[3, 5], [16]], [[3], [3]], [[3, 5, 7], [105]]):
-            with self.subTest(tree=tree):
-                with self.assertRaises(ValueError):
-                    compute_leaf_remainders(tree)
-        for tree in (None, 15, [[3, True]]):
-            with self.subTest(tree=tree):
-                with self.assertRaises(TypeError):
-                    compute_leaf_remainders(tree)
-
 
 class RawBatchGcdTests(unittest.TestCase):
     def test_raw_values_match_other_product_oracle(self):
@@ -247,8 +236,6 @@ class BatchScannerTests(unittest.TestCase):
                 result = scan_moduli_batch(inputs)
                 self.assertEqual(factor_map(result), factor_map(scan_moduli(inputs)))
                 self.assertEqual(result["unresolved_after_fallback"], 0)
-                self.assertLessEqual(len(result["optional_debug_evidence"]["fallback_witnesses"]), 20)
-        self.assertTrue(result["optional_debug_evidence"]["fallback_witnesses_truncated"])
 
     def test_permutations_preserve_raw_and_resolved_factor_maps(self):
         inputs = [187, 253, 493, 1147]

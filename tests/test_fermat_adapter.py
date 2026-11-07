@@ -133,7 +133,7 @@ class ClosePrimeAdapterTests(unittest.TestCase):
 
     def test_incompatible_exponent_retry_is_bounded(self):
         key = self.backend_key(p=50021, q=50053, e=50021)
-        with patch("rsa_auditor.datasets.generators.close_primes._MAX_GENERATION_ATTEMPTS", 2):
+        with patch("rsa_auditor.datasets.generators.close_primes.MAX_GENERATION_ATTEMPTS", 2):
             with patch("rsa_auditor.datasets.generators.close_primes._generate_close_prime_key", return_value=key) as backend:
                 with self.assertRaisesRegex(RuntimeError, "2 attempts"):
                     generate_close_prime_key(32, 50021, gap_bits=5)

@@ -17,7 +17,7 @@ from unittest.mock import patch
 from rsa_auditor import audit_pipeline
 from rsa_auditor.experiments import comparison as compare_modes
 from rsa_auditor.experiments import cli as experiments
-from rsa_auditor.datasets.builder import save_dataset
+from rsa_auditor.datasets.storage import save_dataset
 from rsa_auditor.evaluation import build_reference, evaluate_audit, expected_moduli
 
 
@@ -91,6 +91,24 @@ class IndependentEvaluationTests(unittest.TestCase):
         self.assertEqual(failed["decryption_cases_passed"], 0)
         with self.assertRaisesRegex(ValueError, "decryption outputs"):
             evaluate_audit(case, report, {})
+
+    def test_record_order_is_irrelevant_but_duplicates_and_nonrecords_are_rejected(self):
+        case = toy_case()
+        report = audit_pipeline.run_audit(case["public_keys"], mode="combined", fermat_budget=16)
+        report["record_findings"].reverse()
+        report["recovered_records"].reverse()
+        self.assertTrue(evaluate_audit(case, report, {})["success"])
+        for field in ("record_findings", "recovered_records"):
+            with self.subTest(field=field, invalid="duplicate"):
+                changed = deepcopy(report)
+                changed[field].append(deepcopy(changed[field][0]))
+                with self.assertRaises(ValueError):
+                    evaluate_audit(case, changed, {})
+            with self.subTest(field=field, invalid="nonrecord"):
+                changed = deepcopy(report)
+                changed[field][0] = None
+                with self.assertRaises(ValueError):
+                    evaluate_audit(case, changed, {})
 
     def test_evaluator_rejects_zeroed_counts_even_when_internal_totals_match(self):
         case = toy_case()
@@ -182,7 +200,7 @@ class ModeComparisonTests(unittest.TestCase):
             self.assertTrue(all(row["fermat_status"] == "factored" for row in c_rows if row["fermat_budget"] == "256"))
             self.assertTrue(all(row["required_fermat_candidates"] == "50" for row in c_rows))
             metadata = json.loads((output / "run_metadata.json").read_text())
-            self.assertIn("rsa_auditor/evaluation/checks.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/evaluation.py", metadata["source_sha256"])
             self.assertIn("rsa_auditor/attacks/fermat.py", metadata["source_sha256"])
             self.assertIn("rsa_auditor/datasets/storage.py", metadata["source_sha256"])
             self.assertEqual(metadata["public_sha256"], expected_sha)

@@ -1,0 +1,241 @@
+{
+  "format": "weak-rsa-figure-metadata",
+  "accepted_run_statuses": [
+    "ok",
+    "success"
+  ],
+  "acceptance_rule": "successful status and agrees_with_reference=True; finite nonnegative measurements",
+  "runtime_aggregation": "median of accepted scan_seconds; whiskers are observed minimum and maximum, not confidence intervals",
+  "work_aggregation": "identical measured gcd_calls required within each workload group",
+  "memory_aggregation": "separate tracemalloc CSV; median peak Python allocations with observed min/max, not total process RSS",
+  "grouping": [
+    "modulus_bits",
+    "gcd_backend",
+    "topology_profile",
+    "algorithm",
+    "num_unique_moduli"
+  ],
+  "memory_additional_grouping": [
+    "memory_method",
+    "input_preloaded"
+  ],
+  "sources": {
+    "scalability": {
+      "path": "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/scalability_results.csv",
+      "sha256": "f3b2bb860cb04bfaac728123d7ccff9e858052d9dfa366943687e527ed30f975",
+      "total_rows": 30,
+      "included_rows": 30,
+      "excluded_rows": 0,
+      "exclusion_reasons": {}
+    },
+    "memory": {
+      "path": "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/memory_results.csv",
+      "sha256": "3c61269db6ee6850cbdf4a6adafb583d73f35f6484e8003a3c212dd476ea0283",
+      "total_rows": 6,
+      "included_rows": 6,
+      "excluded_rows": 0,
+      "exclusion_reasons": {}
+    }
+  },
+  "scalability_groups": [
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 20,
+      "trials": 5,
+      "scan_seconds_median": 0.161504708,
+      "scan_seconds_min": 0.161198167,
+      "scan_seconds_max": 0.161557042,
+      "gcd_calls": 20
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 50,
+      "trials": 5,
+      "scan_seconds_median": 0.418002083,
+      "scan_seconds_min": 0.417693916,
+      "scan_seconds_max": 0.420721666,
+      "gcd_calls": 50
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 100,
+      "trials": 5,
+      "scan_seconds_median": 0.89241325,
+      "scan_seconds_min": 0.884540084,
+      "scan_seconds_max": 0.919646958,
+      "gcd_calls": 100
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 20,
+      "trials": 5,
+      "scan_seconds_median": 0.183562709,
+      "scan_seconds_min": 0.18314,
+      "scan_seconds_max": 0.192231,
+      "gcd_calls": 190
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 50,
+      "trials": 5,
+      "scan_seconds_median": 0.576240542,
+      "scan_seconds_min": 0.575680916,
+      "scan_seconds_max": 0.587705792,
+      "gcd_calls": 1225
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 100,
+      "trials": 5,
+      "scan_seconds_median": 1.554278875,
+      "scan_seconds_min": 1.548357958,
+      "scan_seconds_max": 1.574814459,
+      "gcd_calls": 4950
+    }
+  ],
+  "memory_groups": [
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 20,
+      "trials": 1,
+      "memory_method": "tracemalloc_peak_python_allocations",
+      "input_preloaded": true,
+      "peak_traced_bytes_median": 64920,
+      "peak_traced_bytes_min": 64920,
+      "peak_traced_bytes_max": 64920
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 50,
+      "trials": 1,
+      "memory_method": "tracemalloc_peak_python_allocations",
+      "input_preloaded": true,
+      "peak_traced_bytes_median": 169768,
+      "peak_traced_bytes_min": 169768,
+      "peak_traced_bytes_max": 169768
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 100,
+      "trials": 1,
+      "memory_method": "tracemalloc_peak_python_allocations",
+      "input_preloaded": true,
+      "peak_traced_bytes_median": 365640,
+      "peak_traced_bytes_min": 365640,
+      "peak_traced_bytes_max": 365640
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 20,
+      "trials": 1,
+      "memory_method": "tracemalloc_peak_python_allocations",
+      "input_preloaded": true,
+      "peak_traced_bytes_median": 12888,
+      "peak_traced_bytes_min": 12888,
+      "peak_traced_bytes_max": 12888
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 50,
+      "trials": 1,
+      "memory_method": "tracemalloc_peak_python_allocations",
+      "input_preloaded": true,
+      "peak_traced_bytes_median": 16852,
+      "peak_traced_bytes_min": 16852,
+      "peak_traced_bytes_max": 16852
+    },
+    {
+      "modulus_bits": [
+        2048
+      ],
+      "gcd_backend": "euclidean",
+      "topology_profile": "disjoint_shared_pairs_20pct_controls_80pct",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 100,
+      "trials": 1,
+      "memory_method": "tracemalloc_peak_python_allocations",
+      "input_preloaded": true,
+      "peak_traced_bytes_median": 34252,
+      "peak_traced_bytes_min": 34252,
+      "peak_traced_bytes_max": 34252
+    }
+  ],
+  "charts": [
+    {
+      "chart": "runtime_by_unique_moduli",
+      "paths": [
+        "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/figures/runtime_by_unique_moduli.png",
+        "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/figures/runtime_by_unique_moduli.svg"
+      ]
+    },
+    {
+      "chart": "gcd_calls_by_unique_moduli",
+      "paths": [
+        "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/figures/gcd_calls_by_unique_moduli.png",
+        "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/figures/gcd_calls_by_unique_moduli.svg"
+      ]
+    },
+    {
+      "chart": "peak_traced_allocations",
+      "paths": [
+        "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/figures/peak_traced_allocations.png",
+        "/Users/van_flora/Desktop/SC4010-WeakRSA/results/gcd/scalability/figures/peak_traced_allocations.svg"
+      ]
+    }
+  ]
+}

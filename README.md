@@ -9,7 +9,7 @@ keys and verifies selected message decryptions.
 Open a terminal in this project folder and run:
 
 ```bash
-.venv/bin/python -m rsa_auditor --mode combined --fermat-budget 256 --evaluate
+.venv/bin/python -m rsa_auditor.cli --mode combined --fermat-budget 256 --evaluate
 ```
 
 Expected result for the saved demonstration: **8 records / 7 unique moduli;
@@ -32,12 +32,12 @@ SC4010-WeakRSA/           the whole project, not a second program
 ├── rsa_auditor/         ALL application code
 │   ├── attacks/         pairwise GCD, batch GCD and bounded Fermat
 │   ├── datasets/        create, assemble and load inputs
-│   ├── evaluation/      check results against private answers
+│   ├── evaluation.py    check results against private answers
 │   └── experiments/     repeated comparisons and plots
 ├── data/                saved public inputs and private answer sheets
-├── results/             actual measurements and figures, including close_primes/
+├── results/             fresh measurements and figures
 ├── tests/               correctness and integration checks
-├── docs/                code guide, contributions, publishing and historical maps
+├── docs/                code guide, contributions and publishing
 ├── requirements.txt     Python dependencies
 └── README.md            this starting guide
 ```
@@ -50,9 +50,9 @@ Python environment; neither is a second copy of the application.
 ## Choose a mode
 
 ```bash
-.venv/bin/python -m rsa_auditor --mode gcd --evaluate
-.venv/bin/python -m rsa_auditor --mode fermat --fermat-budget 256 --evaluate
-.venv/bin/python -m rsa_auditor --mode combined --fermat-budget 256 --evaluate
+.venv/bin/python -m rsa_auditor.cli --mode gcd --evaluate
+.venv/bin/python -m rsa_auditor.cli --mode fermat --fermat-budget 256 --evaluate
+.venv/bin/python -m rsa_auditor.cli --mode combined --fermat-budget 256 --evaluate
 ```
 
 All commands use `data/public/auditor_demo` by default. GCD-only checks the
@@ -65,7 +65,7 @@ Exhaustion or an absent shared factor is not a claim of security.
 For public-only operation, omit `--evaluate` or specify the file directly:
 
 ```bash
-.venv/bin/python -m rsa_auditor --public-only data/public/auditor_demo/public.json --mode combined --fermat-budget 256
+.venv/bin/python -m rsa_auditor.cli --public-only data/public/auditor_demo/public.json --mode combined --fermat-budget 256
 ```
 
 The auditor receives ID, n, e and ciphertext. The separate `data/private/` file
@@ -77,7 +77,7 @@ sheet for checking the attack afterward, not an attack input.
 Run a repeatable comparison into a new output directory:
 
 ```bash
-.venv/bin/python -m rsa_auditor.experiments --mode compare --dataset data/public/auditor_demo --budgets 16 256 --trials 5 --output results/my_comparison
+.venv/bin/python -m rsa_auditor.experiments.cli --mode compare --dataset data/public/auditor_demo --budgets 16 256 --trials 5 --output results/my_comparison
 ```
 
 Run the tests:
@@ -89,11 +89,11 @@ Run the tests:
 Create another mixed dataset only when needed:
 
 ```bash
-.venv/bin/python -m rsa_auditor.datasets --case auditor --name my_auditor --bits 2048 --message "SC4010 combined auditor demo"
+.venv/bin/python -m rsa_auditor.datasets.cli --case auditor --name my_auditor --bits 2048 --message "SC4010 combined auditor demo"
 ```
 
 Output files refuse overwrite; use a new name for each generated dataset or
-experiment. The saved findings already provide evidence for a presentation:
+experiment. The freshly measured findings provide evidence for a presentation:
 see [results/README.md](results/README.md). Scan times exclude generation, I/O,
 normalization, record mapping, recovery/OAEP and private evaluation; the source
 metadata states the exact boundary. Fixed-fixture pilots do not establish a
@@ -105,13 +105,37 @@ universal speedup.
 - [Contributions](docs/CONTRIBUTIONS.md): original algorithms and AI-assisted integration.
 - [Publishing](docs/PUBLISHING.md): how to advance main after reviewing this branch.
 
-Only the original close-prime files used by the program are kept in the active
-package, unchanged in content: `attacks/fermat_original.py` and
-`datasets/generators/close_primes_original.py`. All historical close-prime CSVs
-and graphs are in [results/close_primes/](results/close_primes/README.md).
-The full original standalone studies remain on `close-primes` at `bd60ccb`;
-the old GCD demonstration remains in `gcd` at `2660d26`. Current commands run
-the integrated auditor studies; use those original revisions to reproduce
-standalone historical studies. Historical run metadata is preserved unchanged.
+Your friend's Fermat methods live in `attacks/fermat.py`, alongside the bounded
+audit entrypoint. Her prime-generation methods live in
+`datasets/generators/close_primes.py`, alongside the shared dataset entrypoint.
+The algorithms are retained without separate `_original.py` copies; their
+original source remains on `close-primes`. The paired pilot measures four
+Fermat methods using nine saved RSA-2048 inputs:
 
+```bash
+.venv/bin/python -m rsa_auditor.experiments.cli --mode fermat-pilot --fermat-dataset data/public/fermat_pilot --gap-bits 515 518 520 --keys-per-gap 3 --bits 2048 --budgets 16 65536 --output results/new_fermat
+```
+
+The fresh GCD fallback study can also be repeated directly:
+
+```bash
+.venv/bin/python -m rsa_auditor.experiments.cli --mode stress --dataset-dirs data/public/gcd_mixed --trials 5 --warmups 1 --backend euclidean --output results/new_stress
+```
+
+Only fresh runs are kept in the current `results/` tree: `comparison/`,
+`gcd/`, `fermat/` and `audit_report.json`. The saved datasets stay because they
+are inputs, not obsolete result copies. New execution times can differ from
+old runs; use the current study settings and measured values for presentation.
+
+The active code uses the [Google Python style guide](https://google.github.io/styleguide/pyguide.html)
+for straightforward functions, descriptive names and explanatory docstrings.
+`.style.yapf` selects Google formatting for future edits. Saved measurements
+still identify producer revision `4c552fd`; this readability refactor does not
+rewrite their timings or source hashes.
+
+The old GCD findings remain on `gcd` at `2660d26`; the full original close-prime
+studies remain on `close-primes` at `bd60ccb`. Before deletion, previously
+uncommitted local archives were saved exactly in commit `481dbaa`. Normal
+promotion to main preserves that history. Old result copies, migration maps
+and archive folders were removed from the working tree after new runs passed.
 No branch was published automatically, and the original branches were not edited.
