@@ -1,4 +1,4 @@
-"""Shared dictionary contracts for Van and Krystal.
+"""Shared public records and result formats for the RSA auditor.
 
 TypedDict supplies static hints; runtime validation stays in normalization,
 dataset, and attack/recovery modules. Python ints/bytes are saved as hex.
@@ -197,6 +197,8 @@ class AuditReport(ScanResult):
 
 
 # Common result for the adapter to Krystal's Fermat implementation.
+
+
 class FermatResult(TypedDict):
     status: FermatStatus
     factors: Optional[FactorPair]

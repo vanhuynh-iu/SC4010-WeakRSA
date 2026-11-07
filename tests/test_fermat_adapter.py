@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 from Crypto.Util.number import isPrime
 
-from rsa_auditor.fermat_adapter import fermat_factor
-from rsa_auditor.generators.close_prime_cases import generate_close_prime_key
+from rsa_auditor.attacks.fermat import fermat_factor
+from rsa_auditor.datasets.generators.close_primes import generate_close_prime_key
 
 
 class FermatAdapterTests(unittest.TestCase):
@@ -15,7 +15,7 @@ class FermatAdapterTests(unittest.TestCase):
         self.assertEqual(fermat_factor(11 * 13, 1), {
             "status": "factored", "factors": (11, 13), "candidate_tests": 1,
         })
-        with patch("rsa_auditor.fermat_adapter.fermat_attack", return_value=(13, 11, 1)):
+        with patch("rsa_auditor.attacks.fermat.fermat_attack", return_value=(13, 11, 1)):
             self.assertEqual(fermat_factor(143, 1)["factors"], (11, 13))
 
     def test_exact_budget_boundary_and_repeatability(self):
@@ -32,7 +32,7 @@ class FermatAdapterTests(unittest.TestCase):
         self.assertEqual(fermat_factor(n, 3), expected)
 
     def test_zero_budget_skips_backend(self):
-        with patch("rsa_auditor.fermat_adapter.fermat_attack") as backend:
+        with patch("rsa_auditor.attacks.fermat.fermat_attack") as backend:
             self.assertEqual(fermat_factor(5959, 0), {
                 "status": "budget_exhausted", "factors": None, "candidate_tests": 0,
             })
@@ -41,7 +41,7 @@ class FermatAdapterTests(unittest.TestCase):
     def test_invalid_inputs_are_rejected_before_attack(self):
         class IntSubclass(int):
             pass
-        with patch("rsa_auditor.fermat_adapter.fermat_attack") as backend:
+        with patch("rsa_auditor.attacks.fermat.fermat_attack") as backend:
             for n in (True, False, 15.0, "15", None, IntSubclass(15)):
                 with self.subTest(n=n), self.assertRaises(TypeError):
                     fermat_factor(n, 1)
@@ -65,14 +65,14 @@ class FermatAdapterTests(unittest.TestCase):
         )
         for n, result in cases:
             with self.subTest(n=n, result=result):
-                with patch("rsa_auditor.fermat_adapter.fermat_attack", return_value=result):
+                with patch("rsa_auditor.attacks.fermat.fermat_attack", return_value=result):
                     with self.assertRaises((TypeError, ValueError)):
                         fermat_factor(n, 3)
 
     def test_backend_candidate_count_must_be_exact_and_within_budget(self):
         for count in (0, -1, True, 3.0, 2, 4):
             with self.subTest(count=count):
-                with patch("rsa_auditor.fermat_adapter.fermat_attack", return_value=(59, 101, count)):
+                with patch("rsa_auditor.attacks.fermat.fermat_attack", return_value=(59, 101, count)):
                     with self.assertRaisesRegex(ValueError, "candidate count"):
                         fermat_factor(5959, 3)
 
@@ -85,7 +85,7 @@ class ClosePrimeAdapterTests(unittest.TestCase):
 
     def test_default_gap_and_private_truth_stay_out_of_public_record(self):
         key = self.backend_key()
-        with patch("rsa_auditor.generators.close_prime_cases._generate_close_prime_key", return_value=key) as backend:
+        with patch("rsa_auditor.datasets.generators.close_primes._generate_close_prime_key", return_value=key) as backend:
             case = generate_close_prime_key(32)
         backend.assert_called_once_with(bits=32, gap_bits=11, e=65537)
         self.assertEqual(case["public_key"], {"key_id": "key_001", "n": key["n"], "e": 65537})
@@ -99,17 +99,17 @@ class ClosePrimeAdapterTests(unittest.TestCase):
 
     def test_power_of_two_target_maps_to_minimum_separation(self):
         key = self.backend_key(q=50053)
-        with patch("rsa_auditor.generators.close_prime_cases._generate_close_prime_key", return_value=key) as backend:
+        with patch("rsa_auditor.datasets.generators.close_primes._generate_close_prime_key", return_value=key) as backend:
             case = generate_close_prime_key(32, target_gap=32)
         backend.assert_called_once_with(bits=32, gap_bits=5, e=65537)
         self.assertEqual(case["private_truth"]["actual_gap"], 32)
         # A requested power of two is a starting separation, not exact q-p.
         key = self.backend_key(q=50023)
-        with patch("rsa_auditor.generators.close_prime_cases._generate_close_prime_key", return_value=key):
+        with patch("rsa_auditor.datasets.generators.close_primes._generate_close_prime_key", return_value=key):
             self.assertEqual(generate_close_prime_key(32, target_gap=1)["private_truth"]["actual_gap"], 2)
 
     def test_invalid_parameters_never_enter_original_retry_loop(self):
-        with patch("rsa_auditor.generators.close_prime_cases._generate_close_prime_key") as backend:
+        with patch("rsa_auditor.datasets.generators.close_primes._generate_close_prime_key") as backend:
             for bits in (-32, 0, 16, 31, 33, 65):
                 with self.subTest(bits=bits), self.assertRaises(ValueError):
                     generate_close_prime_key(bits)
@@ -133,8 +133,8 @@ class ClosePrimeAdapterTests(unittest.TestCase):
 
     def test_incompatible_exponent_retry_is_bounded(self):
         key = self.backend_key(p=50021, q=50053, e=50021)
-        with patch("rsa_auditor.generators.close_prime_cases._MAX_GENERATION_ATTEMPTS", 2):
-            with patch("rsa_auditor.generators.close_prime_cases._generate_close_prime_key", return_value=key) as backend:
+        with patch("rsa_auditor.datasets.generators.close_primes._MAX_GENERATION_ATTEMPTS", 2):
+            with patch("rsa_auditor.datasets.generators.close_primes._generate_close_prime_key", return_value=key) as backend:
                 with self.assertRaisesRegex(RuntimeError, "2 attempts"):
                     generate_close_prime_key(32, 50021, gap_bits=5)
                 self.assertEqual(backend.call_count, 2)

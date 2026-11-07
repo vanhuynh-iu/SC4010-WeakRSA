@@ -1,0 +1,192 @@
+{
+  "date": "2026-11-08",
+  "before_refactor_commit": "b4a5cb4371aac46775b450d61e0e48b5275c9561",
+  "purpose": "Split code by responsibility, with a public audit path and a separate private answer-sheet checker.",
+  "notes": [
+    "Algorithms, stored record formats and recorded benchmark data were preserved.",
+    "Existing test bodies were retained with imports and mock targets updated.",
+    "New experiment runs fingerprint the current component source paths.",
+    "The prior layout-migration.json describes the earlier commit layout; follow this record for the next step."
+  ],
+  "module_changes": [
+    {
+      "previous_path": "rsa_auditor/contracts.py",
+      "previous_sha256": "0931ffd63c07f1c4e40d283f050391986a3b6d227dcd97ba58a84f15f6458195",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/records.py",
+          "sha256": "3268993e1af67225420979b4808a6beff37d5d83ee894554d778de8add72de95"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/normalization.py",
+      "previous_sha256": "c505d1c86a90dec361766ea335439978fce47c396d1d58998e28f50c5c0cac9c",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/public_inputs.py",
+          "sha256": "6c78fc42a64357e78793922cb85083c7990f8dbd24615f0bba80050c4a2c7a73"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/shared_prime_attack.py",
+      "previous_sha256": "f8b2ea87a441acceafe163b8f101fa0f93b1b62f6469cc47f3fd13b0ebbf81a9",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/attacks/pairwise_gcd.py",
+          "sha256": "6de2421ccfd49767f3a7f77551dce42bed2aae25f8b134f8facc1f6efbc818d8"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/batch_gcd_attack.py",
+      "previous_sha256": "b7e7178bc9e0fde025aeabe909d922e0db434b2a51a6910990373353adb0cf5a",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/attacks/batch_gcd.py",
+          "sha256": "48d3b1c8dea129c24a33e9a0c758cdafcea886385d524d7b832cad1720548bf1"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/fermat_adapter.py",
+      "previous_sha256": "cb08fb5a73a1246c18c329bbb6468fea43f275d31f7223ac431184b530fa4f82",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/attacks/fermat.py",
+          "sha256": "73d19913c9912493615ea3ce404c51a30e3a8c463d241765f09100200b739f10"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/dataset_io.py",
+      "previous_sha256": "612e129c9cd6aa2d9a5d62756c8ccddc2ab4ee863656b05e1e8700700885fe8e",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/datasets/storage.py",
+          "sha256": "d2daae3aa4c6289632ffaf774ccba61a9c7f1a151c533231efad2087ec21d5aa"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/build_dataset.py",
+      "previous_sha256": "54cb014f74c69ef95408727743c03054efcaa7d539f177fdf4d6eec50fc5b697",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/datasets/builder.py",
+          "sha256": "0bd222aeca495d80c7eef6e0ea57045d4d659deae673783b147d80ce3e9c8499"
+        },
+        {
+          "path": "rsa_auditor/datasets/cli.py",
+          "sha256": "d87f28d02d128d9a779808594dd6df1fc46f4c4a7a23b0bb0276863707c930b8"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/generators/shared_prime_cases.py",
+      "previous_sha256": "f49be0babdbd7529b5416da925b67bec6fa21091886a37bedb3507fe2a72d19c",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/datasets/generators/shared_primes.py",
+          "sha256": "cbee033f0c0abbf2a4cae69d14bc9fe5583eac09ebd27e18ff73defe48af616c"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/generators/control_cases.py",
+      "previous_sha256": "388260a57993bb6f6c497fe8604cdb29afc29dbf753765ca26ed68e5a0aa8a6c",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/datasets/generators/controls.py",
+          "sha256": "82855db808b7ebabe21b1590512579ef0287f0e08013499b89b896641b135406"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/generators/close_prime_cases.py",
+      "previous_sha256": "1f77e930dd6fc50481bb6a79e51dd90d34f85840bc49d9e71cfeed415198afca",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/datasets/generators/close_primes.py",
+          "sha256": "4441464468fb0718ad531dbfd8abfc11d489af4379330db5e616f503b0d943cb"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/evaluation.py",
+      "previous_sha256": "16bc8e090d3477aff4a535919ae13edad13383c71c94fcc8e84996654bc8e806",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/evaluation/reference.py",
+          "sha256": "178028bc8bbe3f175a9e43295c29d6f65d2b13169fe009f9c92ba147ee8524c3"
+        },
+        {
+          "path": "rsa_auditor/evaluation/checks.py",
+          "sha256": "efbe0a8f20fc792b23c79b568818576e87308af62dd7b9a42ba18ac4421c2c7a"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/audit_pipeline.py",
+      "previous_sha256": "3bc74f2a38b7ca17a4a6d4c2ff5be7517f122779a03ad403edcbe929690c9197",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/audit_pipeline.py",
+          "sha256": "cc139e3756e550ab5095595bf3142599cd0e7480eb1cf0eac2ea5f695ae2af2b"
+        },
+        {
+          "path": "rsa_auditor/key_recovery.py",
+          "sha256": "ba6e299672772972b9d3e0d3c065014cd64bf4973eeccc008d034d1b068c290b"
+        },
+        {
+          "path": "rsa_auditor/evaluation/gcd.py",
+          "sha256": "2b3124e40ff80075e0879317effc1a6581904d91fb02a5364e5881751e7b42d5"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/compare_modes.py",
+      "previous_sha256": "c299cf999f66a0fc321476518fba35726444e9e9d3a6a68923ac3a79f11dab21",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/experiments/comparison.py",
+          "sha256": "b598641fa641fc723f1f28738c301488a13d29dd60d53f2564887ae22a96311f"
+        }
+      ]
+    },
+    {
+      "previous_path": "rsa_auditor/experiments.py",
+      "previous_sha256": "fc74f7d12a9d01ebe391b8360e684e8d3257e27cda5dbb3a9ec35fcd02f0531b",
+      "current_sources": [
+        {
+          "path": "rsa_auditor/experiments/cli.py",
+          "sha256": "618004f150374f2276092844a7f07283c9788edaed74d397d6858a1f8ecf0319"
+        },
+        {
+          "path": "rsa_auditor/experiments/common.py",
+          "sha256": "7407aa789b775aad5be674bb058eb80119d5e93af54cdb784aa92eba8649014b"
+        },
+        {
+          "path": "rsa_auditor/experiments/gcd_scalability.py",
+          "sha256": "20f62546902b436167d4072766d1381122d2dda3483ab82345ac767c49863cca"
+        },
+        {
+          "path": "rsa_auditor/experiments/gcd_checks.py",
+          "sha256": "c0c72ee40bc6ddd8f1624629cf1e5577dd3cb47abe7133057d6f14cbe528b805"
+        },
+        {
+          "path": "rsa_auditor/experiments/plots.py",
+          "sha256": "d790f42e76587a38163570addff095a2974fb2a0bddf90ff032992c0f6bc8619"
+        }
+      ]
+    }
+  ],
+  "preserved_data_result_and_original_project_files": 87,
+  "preserved_file_hash_manifest_sha256": "c7d44237e2940bc7488eb830eaac95c7bffe2823972ef954a4bde17ff8db04b3",
+  "unchanged_branch_refs": {
+    "main": "9e3ac0f6e226701f775b67e644f8f26d1f89c55f",
+    "close-primes": "bd60ccb7b201033380da2d3e9f7197d394b9374c",
+    "gcd": "2660d26ec22d268d2063bc7e1836638518b7839a"
+  }
+}

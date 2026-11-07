@@ -15,9 +15,9 @@ import unittest
 from unittest.mock import patch
 
 from rsa_auditor import audit_pipeline
-from rsa_auditor import compare_modes
-from rsa_auditor import experiments
-from rsa_auditor.build_dataset import save_dataset
+from rsa_auditor.experiments import comparison as compare_modes
+from rsa_auditor.experiments import cli as experiments
+from rsa_auditor.datasets.builder import save_dataset
 from rsa_auditor.evaluation import build_reference, evaluate_audit, expected_moduli
 
 
@@ -182,9 +182,9 @@ class ModeComparisonTests(unittest.TestCase):
             self.assertTrue(all(row["fermat_status"] == "factored" for row in c_rows if row["fermat_budget"] == "256"))
             self.assertTrue(all(row["required_fermat_candidates"] == "50" for row in c_rows))
             metadata = json.loads((output / "run_metadata.json").read_text())
-            self.assertIn("rsa_auditor/evaluation.py", metadata["source_sha256"])
-            self.assertIn("rsa_auditor/fermat_adapter.py", metadata["source_sha256"])
-            self.assertIn("rsa_auditor/dataset_io.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/evaluation/checks.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/attacks/fermat.py", metadata["source_sha256"])
+            self.assertIn("rsa_auditor/datasets/storage.py", metadata["source_sha256"])
             self.assertEqual(metadata["public_sha256"], expected_sha)
             self.assertIn("recovery/OAEP", metadata["excluded_from_timing"])
 
@@ -241,8 +241,8 @@ class ModeComparisonTests(unittest.TestCase):
             self.assertEqual((output / "summary.json").read_text(), "original")
 
     def test_experiments_compare_route_does_not_generate_or_run_legacy_benchmarks(self):
-        with patch("rsa_auditor.compare_modes.run_mode_comparison", return_value={"all_runs_ok": True}) as run, \
-             patch("rsa_auditor.experiments.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
+        with patch("rsa_auditor.experiments.comparison.run_mode_comparison", return_value={"all_runs_ok": True}) as run, \
+             patch("rsa_auditor.experiments.cli.prepare_scalability_datasets", side_effect=AssertionError("no generation")), \
              redirect_stdout(StringIO()):
             self.assertEqual(experiments.main(["--mode", "compare", "--dataset", "fixture", "--budgets", "16", "256",
                                                "--trials", "3", "--gcd-backend", "pairwise", "--output", "out"]), 0)

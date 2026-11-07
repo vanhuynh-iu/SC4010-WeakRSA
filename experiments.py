@@ -1,6 +1,6 @@
 """Run RSA auditor experiments from the repository root."""
 
-from rsa_auditor.experiments import main
+from rsa_auditor.experiments.cli import main
 
 
 if __name__ == "__main__":

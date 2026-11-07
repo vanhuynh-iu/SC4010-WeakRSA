@@ -13,17 +13,16 @@ import io
 import json
 import math
 from pathlib import Path
-import platform
 from statistics import median
-import subprocess
 import uuid
 
-import Crypto
 
-from . import audit_pipeline
-from .build_dataset import dataset_paths, load_dataset
-from .contracts import SCAN_COUNTERS
-from .evaluation import MODES, build_reference, evaluate_audit, expected_moduli
+from .. import audit_pipeline
+from ..datasets.storage import dataset_paths, load_dataset
+from ..records import SCAN_COUNTERS
+from ..evaluation import MODES, build_reference, evaluate_audit, expected_moduli
+from ..key_recovery import recover_messages
+from .common import _code_metadata
 
 
 OUTPUT_NAMES = ("mode_comparison.csv", "fermat_gap_budget.csv", "summary.json", "run_metadata.json")
@@ -69,31 +68,6 @@ def _csv_text(rows, fields):
     writer.writeheader()
     writer.writerows(rows)
     return output.getvalue()
-
-
-def _source_metadata():
-    root = Path(__file__).resolve().parents[1]
-    names = ("rsa_auditor/compare_modes.py", "rsa_auditor/evaluation.py",
-             "rsa_auditor/audit_pipeline.py", "legacy/close_primes/fermat_attack.py",
-             "rsa_auditor/fermat_adapter.py", "rsa_auditor/shared_prime_attack.py",
-             "rsa_auditor/batch_gcd_attack.py", "rsa_auditor/normalization.py",
-             "rsa_auditor/key_recovery.py", "rsa_auditor/contracts.py",
-             "rsa_auditor/build_dataset.py", "rsa_auditor/dataset_io.py",
-             "rsa_auditor/generators/shared_prime_cases.py", "rsa_auditor/generators/close_prime_cases.py",
-             "rsa_auditor/generators/control_cases.py")
-    revision, dirty = None, None
-    try:
-        revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True,
-                                           stderr=subprocess.DEVNULL).strip()
-        dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True))
-    except (OSError, subprocess.CalledProcessError):
-        pass
-    return {
-        "python_version": platform.python_version(), "platform": platform.platform(),
-        "pycryptodome_version": Crypto.__version__, "git": {"revision": revision, "dirty": dirty},
-        "source_sha256": {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
-                          for name in names if (root / name).is_file()},
-    }
 
 
 def _report_metrics(report):
@@ -163,7 +137,7 @@ def run_mode_comparison(dataset_directory, output_directory, budgets=(16, 256), 
     reference = build_reference(case)
     public_path, truth_path, manifest_path = dataset_paths(dataset_directory, private_directory)
     dataset_sha256 = hashlib.sha256(public_path.read_bytes()).hexdigest()
-    source_metadata = _source_metadata()
+    source_metadata = _code_metadata()
     normalized = reference["normalized"]
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ_") + uuid.uuid4().hex[:8]
     rows, gap_rows, comparisons = [], [], []
@@ -189,7 +163,7 @@ def run_mode_comparison(dataset_directory, output_directory, budgets=(16, 256), 
                                                        fermat_budget=budget)
                     if (report["mode"], report["gcd_backend"], report["fermat_budget"]) != (mode, gcd_backend, budget):
                         raise ValueError("auditor returned a different mode/backend/budget")
-                    messages = audit_pipeline.recover_messages(records, report)
+                    messages = recover_messages(records, report)
                     evaluation = evaluate_audit(case, report, messages, reference=reference)
                     row.update({name: evaluation[name] for name in EVALUATION_FIELDS})
                     row.update(_report_metrics(report))

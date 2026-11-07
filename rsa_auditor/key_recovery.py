@@ -3,6 +3,8 @@
 PyCryptodome supplies primality checks, key construction, and OAEP-SHA256.
 """
 
+from .records import AuditReport
+
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
@@ -133,3 +135,22 @@ def decrypt_with_recovered_key(
     d = recover_private_key(p, q, e)
     recovered_key = RSA.construct((n, e, d, p, q), consistency_check=True)
     return PKCS1_OAEP.new(recovered_key, hashAlgo=SHA256).decrypt(ciphertext)
+
+
+def recover_messages(public_keys, scan_result: AuditReport) -> dict[str, bytes]:
+    """Decrypt using only factors returned by the attack, without ground truth."""
+    public_by_id = {key["key_id"]: key for key in public_keys}
+    messages = {}
+    for factors in scan_result["recovered_records"]:
+        key_id = factors["key_id"]
+        key = public_by_id[key_id]
+        if factors["e"] != key["e"]:
+            raise ValueError("recovered record exponent does not match its public record")
+        if factors["n"] != key["n"] or factors["p"] * factors["q"] != key["n"]:
+            raise ValueError("attack factors do not match the original public modulus")
+        if "ciphertext" not in key:
+            continue
+        messages[key_id] = decrypt_with_recovered_key(
+            key["ciphertext"], key["n"], key["e"], factors["p"], factors["q"]
+        )
+    return messages

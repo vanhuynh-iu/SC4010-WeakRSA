@@ -6,8 +6,9 @@ import json
 from pathlib import Path
 from time import perf_counter
 
-from .audit_pipeline import run_audit, recover_messages
-from .dataset_io import load_dataset, load_public_keys
+from .audit_pipeline import run_audit
+from .key_recovery import recover_messages
+from .datasets.storage import load_dataset, load_public_keys
 
 
 def report_document(report, messages, evaluation=None, recovery_seconds=0.0):

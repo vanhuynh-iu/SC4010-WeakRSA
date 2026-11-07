@@ -1,7 +1,7 @@
 """Validate and deduplicate Van's public RSA records without reading truth."""
 
 
-from .contracts import NormalizedKeySet, PublicKeyRecord
+from .records import NormalizedKeySet, PublicKeyRecord
 
 
 _REQUIRED_FIELDS = {"key_id", "n", "e"}

@@ -52,3 +52,14 @@ rewritten. `layout-migration.json` records the old/new locations and hashes.
 
 The original `close-primes`, `gcd` and `main` branch references were preserved.
 This cleanup does not declare new student authorship or publish a branch.
+
+## Component refactor — 8 November 2026
+
+At Van's request, Codex grouped attacks, dataset preparation, private evaluation
+and experiments into smaller modules. The large experiment runner was split
+by study/plotting responsibility, dataset argument handling was separated from
+assembly, recovery moved into key_recovery, and private grading was removed
+from the public pipeline module. Clearer names include records, public_inputs,
+pairwise_gcd, batch_gcd and shared_primes. Existing algorithm bodies, record
+formats and historical measurements were preserved; imports and test patch
+locations were updated. CODE_GUIDE.md explains the private answer sheet.

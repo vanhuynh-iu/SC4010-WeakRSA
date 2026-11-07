@@ -2,7 +2,8 @@
 
 from Crypto.PublicKey import RSA
 
-from ..contracts import GeneratedKeyCase
+from ...records import GeneratedKeyCase
+
 
 def generate_control_key(modulus_bits: int = 2048, e: int = 65537) -> GeneratedKeyCase:
     """Return a library-generated key with separate public/private records.

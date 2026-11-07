@@ -3,9 +3,9 @@
 from math import gcd
 from typing import Optional
 
-from ..contracts import GeneratedKeyCase
+from ...records import GeneratedKeyCase
 from legacy.close_primes.key_generation import generate_close_prime_key as _generate_close_prime_key
-from ..key_recovery import validate_factors
+from ...key_recovery import validate_factors
 
 
 _MAX_GENERATION_ATTEMPTS = 100

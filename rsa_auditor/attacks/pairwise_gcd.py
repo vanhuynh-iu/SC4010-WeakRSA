@@ -5,7 +5,7 @@ Candidate primality checks use PyCryptodome; no private truth is accepted.
 
 from Crypto.Util.number import isPrime
 
-from .contracts import ScanResult
+from ..records import ScanResult
 
 _MAX_DEBUG_PAIRS = 20
 

@@ -12,8 +12,8 @@ import platform
 
 import Crypto
 
-from .contracts import DatasetCase, PublicKeyRecord
-from .normalization import normalize_public_keys, validate_public_records
+from ..records import DatasetCase, PublicKeyRecord
+from ..public_inputs import normalize_public_keys, validate_public_records
 
 
 _PUBLIC_FORMAT = "weak-rsa-public"

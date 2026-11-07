@@ -1,6 +1,6 @@
-"""Run the RSA auditor dataset builder command from the repository root."""
+"""Create a saved RSA dataset from the repository root."""
 
-from rsa_auditor.build_dataset import main
+from rsa_auditor.datasets.cli import main
 
 
 if __name__ == "__main__":

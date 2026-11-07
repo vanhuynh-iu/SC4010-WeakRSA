@@ -26,40 +26,58 @@ Omit it for a public-only audit.
 ```text
 SC4010-WeakRSA/
 ├── demo.py                  # run the auditor
-├── build_dataset.py         # create a new saved dataset
-├── experiments.py           # run repeatable comparisons
-├── rsa_auditor/             # shared application code
-│   ├── cli.py               # command-line input and audit reports
-│   ├── audit_pipeline.py    # GCD / Fermat / combined orchestration
-│   ├── shared_prime_attack.py
-│   ├── batch_gcd_attack.py
-│   ├── fermat_adapter.py    # calls Krystal's original Fermat code
-│   ├── key_recovery.py      # factor validation, inverse and OAEP
-│   ├── contracts.py         # common records and result formats
-│   ├── normalization.py     # validation and duplicate handling
-│   ├── dataset_io.py        # lossless public/private JSON files
-│   ├── build_dataset.py     # dataset assembly
-│   ├── generators/          # shared-prime, control and close-prime cases
-│   ├── evaluation.py        # independent post-attack checks
-│   ├── compare_modes.py     # shared three-mode comparison
-│   └── experiments.py       # original GCD experiments and shared runner
-├── data/
-│   ├── public/              # attack inputs and checksums
-│   └── private/             # evaluator factors, labels and messages
-├── results/                 # combined pilot and GCD findings
-├── tests/                   # shared correctness and integration tests
-├── legacy/
-│   ├── close_primes/        # Krystal's original project, preserved together
-│   │   └── results/         # her original CSVs and graphs
-│   └── gcd_demo.py          # original standalone GCD demo
-└── docs/                    # contributions, history and publishing steps
+├── build_dataset.py         # create a saved dataset
+├── experiments.py           # run experiments or plots
+├── rsa_auditor/
+│   ├── cli.py               # audit command and report output
+│   ├── audit_pipeline.py    # public-only audit orchestration
+│   ├── key_recovery.py      # validate recovered factors and decrypt
+│   ├── public_inputs.py     # validate/deduplicate public records
+│   ├── records.py           # shared record and result formats
+│   ├── attacks/
+│   │   ├── pairwise_gcd.py
+│   │   ├── batch_gcd.py
+│   │   └── fermat.py        # budgeted interface to the original baseline
+│   ├── datasets/
+│   │   ├── storage.py       # public/private JSON and checksums
+│   │   ├── builder.py       # assemble cases and assign neutral IDs
+│   │   ├── cli.py           # dataset-building command
+│   │   └── generators/      # shared_primes.py, close_primes.py, controls.py
+│   ├── evaluation/
+│   │   ├── reference.py     # prepare the private answer sheet
+│   │   ├── checks.py        # grade completed three-mode audits
+│   │   └── gcd.py           # original GCD-only evaluation
+│   └── experiments/
+│       ├── cli.py           # select an experiment
+│       ├── comparison.py    # three-mode/budget comparison
+│       ├── gcd_scalability.py
+│       ├── gcd_checks.py    # correctness and companion coverage
+│       ├── plots.py         # aggregate and draw saved measurements
+│       └── common.py        # shared execution, loading and provenance
+├── data/public/             # attack inputs
+├── data/private/            # synthetic answer sheets
+├── results/                 # saved combined/GCD measurements
+├── tests/                   # correctness and integration tests
+├── legacy/close_primes/     # original close-prime code and results
+├── legacy/gcd_demo.py       # original GCD demonstration
+└── docs/                    # code guide, contributions and publishing
 ```
 
-The three top-level Python files are small entrypoints. Implementation lives in
-`rsa_auditor/`; data, measured outputs and original standalone work each have a
-clear home. Krystal's original algorithms are still used through the adapters.
-Her original files and saved results were moved without changing their contents.
-The `close-primes`, `gcd` and `main` branches are unaffected by this cleanup.
+Read [the code guide](docs/CODE_GUIDE.md) for the short execution path and an
+explanation of the public/private boundary. The root Python files remain small
+launchers, so the same three commands work after the refactor. The original
+close-prime files/results remain unchanged in content and are used by adapters.
+The `close-primes`, `gcd` and `main` branch references are unchanged.
+
+## What “private evaluation truth” means
+
+Because we generated these synthetic keys, we know the original primes and
+messages. We save those answers separately in `data/private/` so a checker can
+grade the audit. The auditor receives `data/public/`: ID, n, e and ciphertext.
+It must calculate the factors itself. In the demo, `--evaluate` reads the answer
+sheet after the audit and decryption. Without that option, the demo never loads
+it. The two paths in the design diagram describe separate responsibilities,
+not two attacks running in parallel.
 
 ## Three modes, one saved input
 
@@ -124,7 +142,7 @@ do not establish a universal speedup.
 
 See [results/README.md](results/README.md) for saved findings and raw files.
 Earlier benchmark metadata preserves its original source revision and paths;
-[the move record](docs/layout-migration.json) maps those paths to this layout.
+[the initial move record](docs/layout-migration.json) and [component refactor record](docs/component-migration.json) trace those paths through the current layout.
 Recorded measurements keep their original run metadata; cleanup smoke checks use temporary outputs.
 
 ## Tests, originals and history

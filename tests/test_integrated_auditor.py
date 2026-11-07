@@ -9,9 +9,9 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from rsa_auditor.audit_pipeline import run_audit
-from rsa_auditor.shared_prime_attack import scan_moduli
-from rsa_auditor.audit_pipeline import recover_messages
-from rsa_auditor.dataset_io import load_dataset
+from rsa_auditor.attacks.pairwise_gcd import scan_moduli
+from rsa_auditor.key_recovery import recover_messages
+from rsa_auditor.datasets.storage import load_dataset
 
 
 def records():
