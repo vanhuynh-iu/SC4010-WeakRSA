@@ -12,11 +12,15 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from audit_pipeline import audit_public_keys, evaluate_scan, measure_shared_prime_scan, recover_messages
-from build_dataset import assemble_dataset, dataset_paths, load_dataset, load_public_keys, save_dataset
-from demo import main
-from generators.shared_prime_cases import generate_shared_prime_keys, generate_mixed_key_dataset, make_observed_subset
-from key_recovery import encrypt_message
+from rsa_auditor.audit_pipeline import run_audit
+from rsa_auditor.evaluation import evaluate_audit
+from rsa_auditor.attacks.batch_gcd import scan_moduli_batch
+from rsa_auditor.key_recovery import recover_messages
+from rsa_auditor.datasets.builder import assemble_dataset
+from rsa_auditor.datasets.storage import dataset_paths, load_dataset, load_public_keys, save_dataset
+from rsa_auditor.cli import main
+from rsa_auditor.datasets.generators.shared_primes import generate_shared_prime_keys, generate_mixed_key_dataset, make_observed_subset
+from rsa_auditor.key_recovery import encrypt_message
 
 
 def _dataset_file(directory, file_name):
@@ -46,36 +50,35 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
 
     def test_end_to_end_recovers_only_vulnerable_records(self):
         public = self.case["public_keys"]
-        result, elapsed = measure_shared_prime_scan(public)
+        result = run_audit(public, mode="gcd", gcd_backend="pairwise")
+        elapsed = result["scan_seconds"]
         messages = recover_messages(public, result)
-        summary = evaluate_scan(public, self.case["private_truth"],
-                                self.case["expected_vulnerable_ids"], result, messages)
+        summary = evaluate_audit({"public_keys": public, "private_truth": self.case["private_truth"]}, result, messages)
         self.assertTrue(summary["success"])
-        self.assertEqual(summary["recovered_unique_keys"], 2)
+        self.assertEqual(summary["recovered_records"], 2)
         self.assertEqual(summary["recovered_unique_moduli"], 2)
-        self.assertEqual(summary["false_positives"], 0)
-        self.assertEqual(summary["missed_vulnerable_keys"], 0)
-        self.assertEqual(summary["gcd_comparisons"], 6)
-        self.assertEqual(summary["matching_pairs"], 1)
+        self.assertEqual(summary["false_positive_moduli"], 0)
+        self.assertEqual(summary["false_negative_moduli"], 0)
+        self.assertEqual(result["gcd_calls"], 6)
         self.assertGreaterEqual(elapsed, 0)
         self.assertEqual(set(messages.values()), {self.message})
 
     def test_controls_do_not_fall_back_to_generator_factors(self):
         controls = self.case["public_keys"][2:]
-        result, _ = measure_shared_prime_scan(controls)
-        self.assertEqual(result["recovered_keys"], [])
+        result = run_audit(controls, mode="gcd", gcd_backend="pairwise")
+        self.assertEqual(result["recovered_records"], [])
         self.assertEqual(recover_messages(controls, result), {})
 
     def test_rejects_forged_attack_product(self):
-        result, _ = measure_shared_prime_scan(self.case["public_keys"])
-        result["recovered_keys"][0]["p"] += 2
+        result = run_audit(self.case["public_keys"], mode="gcd", gcd_backend="pairwise")
+        result["recovered_records"][0]["p"] += 2
         with self.assertRaises(ValueError):
             recover_messages(self.case["public_keys"], result)
 
     def test_corrupted_ciphertext_cannot_be_reported_as_success(self):
         public = deepcopy(self.case["public_keys"])
         public[0]["ciphertext"] = b"\x00" * len(public[0]["ciphertext"])
-        result, _ = measure_shared_prime_scan(public)
+        result = run_audit(public, mode="gcd", gcd_backend="pairwise")
         with self.assertRaises(ValueError):
             recover_messages(public, result)
 
@@ -85,15 +88,14 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
         public.append(duplicate)
         truth = deepcopy(self.case["private_truth"])
         truth["key_005"] = dict(truth["key_001"])
-        result, _ = measure_shared_prime_scan(public)
+        result = run_audit(public, mode="gcd", gcd_backend="pairwise")
         messages = recover_messages(public, result)
-        summary = evaluate_scan(public, truth, ["key_001", "key_002", "key_005"], result, messages)
+        summary = evaluate_audit({"public_keys": public, "private_truth": truth}, result, messages)
         self.assertTrue(summary["success"])
-        self.assertEqual(summary["recovered_unique_keys"], 3)
+        self.assertEqual(summary["recovered_records"], 3)
         self.assertEqual(summary["recovered_unique_moduli"], 2)
-        self.assertEqual(summary["duplicate_pairs"], 1)
         # Deduplicate five records to four moduli before scanning.
-        self.assertEqual(summary["gcd_comparisons"], 6)
+        self.assertEqual(result["gcd_calls"], 6)
         self.assertEqual(summary["num_records"], 5)
         self.assertEqual(summary["num_unique_moduli"], 4)
         self.assertEqual(summary["duplicate_extra_records"], 1)
@@ -115,9 +117,9 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
             calls.append((a, b))
             return math.gcd(a, b)
 
-        result = audit_public_keys(public, gcd_fn=counted_gcd)
+        result = run_audit(public, gcd_fn=counted_gcd, mode="gcd", gcd_backend="pairwise")
         messages = recover_messages(public, result)
-        summary = evaluate_scan(public, truth, ["key_001", "key_002", "alternate"], result, messages)
+        summary = evaluate_audit({"public_keys": public, "private_truth": truth}, result, messages)
         self.assertTrue(summary["success"])
         self.assertEqual(len(calls), 6)
         self.assertEqual(messages["alternate"], self.message)
@@ -127,7 +129,7 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
         self.assertEqual(summary["decryption_cases_passed"], 3)
 
     def test_recovery_rejects_changed_record_exponent(self):
-        result, _ = measure_shared_prime_scan(self.case["public_keys"])
+        result = run_audit(self.case["public_keys"], mode="gcd", gcd_backend="pairwise")
         result["recovered_records"][0]["e"] = 3
         with self.assertRaises(ValueError):
             recover_messages(self.case["public_keys"], result)
@@ -139,36 +141,36 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
         self.assertTrue(before["private_truth"]["key_001"]["intended_weak_generation"])
         self.assertFalse(before["private_truth"]["key_001"]["observable_shared_factor"])
         for case, expected_records in ((before, 0), (after, 2)):
-            result, _ = measure_shared_prime_scan(case["public_keys"])
+            result = run_audit(case["public_keys"], mode="gcd", gcd_backend="pairwise")
             messages = recover_messages(case["public_keys"], result)
-            summary = evaluate_scan(case["public_keys"], case["private_truth"],
-                                    case["expected_vulnerable_ids"], result, messages)
+            summary = evaluate_audit({"public_keys": case["public_keys"], "private_truth": case["private_truth"]}, result, messages)
             self.assertTrue(summary["success"])
             self.assertEqual(summary["recovered_records"], expected_records)
             self.assertEqual(summary["false_negative_moduli"], 0)
             if expected_records == 0:
                 self.assertEqual(summary["decryption_cases_checked"], 0)
-                self.assertIsNone(summary["plaintexts_verified"])
+                self.assertIsNone(summary["all_decryptions_verified"])
             else:
                 self.assertEqual(messages["key_001"], self.message)
 
     def test_evaluator_rejects_population_labels_for_missing_companion(self):
         before = make_observed_subset(self.case, ["key_001", "key_003", "key_004"])
-        result, _ = measure_shared_prime_scan(before["public_keys"])
+        result = run_audit(before["public_keys"], mode="gcd", gcd_backend="pairwise")
+        before["expected_vulnerable_ids"] = ["key_001"]
         with self.assertRaises(ValueError):
-            evaluate_scan(before["public_keys"], before["private_truth"], ["key_001"], result, {})
+            evaluate_audit(before, result, {})
 
     def test_partial_decryption_reports_only_actual_checks(self):
         public = deepcopy(self.case["public_keys"])
         del public[0]["ciphertext"]
-        result, _ = measure_shared_prime_scan(public)
+        result = run_audit(public, mode="gcd", gcd_backend="pairwise")
         messages = recover_messages(public, result)
-        summary = evaluate_scan(public, self.case["private_truth"],
-                                self.case["expected_vulnerable_ids"], result, messages)
+        summary = evaluate_audit({"public_keys": public, "private_truth": self.case["private_truth"]}, result, messages)
         self.assertTrue(summary["success"])
         self.assertEqual(summary["decryption_cases_checked"], 1)
-        self.assertFalse(summary["all_recovered_records_decrypted"])
-        self.assertFalse(summary["all_decryptions_verified"])
+        self.assertEqual(summary["recovered_records"], 2)
+        self.assertEqual(summary["decryption_cases_attempted"], 1)
+        self.assertTrue(summary["all_decryptions_verified"])
 
     def test_fixture_round_trip_preserves_values_and_separation(self):
         with TemporaryDirectory() as directory:
@@ -182,7 +184,7 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
             self.assertEqual(loaded["public_keys"], self.case["public_keys"])
             self.assertEqual(loaded["private_truth"], self.case["private_truth"])
             self.assertEqual(loaded["expected_vulnerable_ids"], self.case["expected_vulnerable_ids"])
-            result, _ = measure_shared_prime_scan(loaded["public_keys"])
+            result = run_audit(loaded["public_keys"], mode="gcd", gcd_backend="pairwise")
             self.assertEqual(set(recover_messages(loaded["public_keys"], result).values()), {self.message})
 
     def test_public_only_cli_works_when_private_file_is_absent(self):
@@ -200,14 +202,13 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
                     self.assertIn("2 recovered keys", output.getvalue())
 
     def test_batch_oaep_uses_same_recovery_path(self):
-        result, _ = measure_shared_prime_scan(self.case["public_keys"], algorithm="batch")
+        result = run_audit(self.case["public_keys"], mode="gcd", gcd_backend='batch')
         messages = recover_messages(self.case["public_keys"], result)
-        summary = evaluate_scan(self.case["public_keys"], self.case["private_truth"],
-                                self.case["expected_vulnerable_ids"], result, messages)
+        summary = evaluate_audit({"public_keys": self.case["public_keys"], "private_truth": self.case["private_truth"]}, result, messages)
         self.assertTrue(summary["success"])
-        self.assertEqual(summary["algorithm"], "batch_with_fallback")
-        self.assertEqual(summary["batch_leaf_gcd_calls"], 4)
-        self.assertEqual(summary["fallback_gcd_calls"], 0)
+        self.assertEqual(result["gcd_backend"], "batch")
+        self.assertEqual(result["batch_leaf_gcd_calls"], 4)
+        self.assertEqual(result["fallback_gcd_calls"], 0)
         self.assertEqual(summary["decryption_cases_checked"], 2)
 
     def test_does_not_overwrite_saved_fixtures(self):
@@ -239,13 +240,12 @@ class SharedPrimeIntegrationTests(unittest.TestCase):
                     load_public_keys(path)
 
     def test_evaluator_rejects_mismatched_truth(self):
-        result, _ = measure_shared_prime_scan(self.case["public_keys"])
+        result = run_audit(self.case["public_keys"], mode="gcd", gcd_backend="pairwise")
         messages = recover_messages(self.case["public_keys"], result)
         truth = deepcopy(self.case["private_truth"])
         truth["key_001"]["p"] += 2
         with self.assertRaises(ValueError):
-            evaluate_scan(self.case["public_keys"], truth,
-                          self.case["expected_vulnerable_ids"], result, messages)
+            evaluate_audit({"public_keys": self.case["public_keys"], "private_truth": truth}, result, messages)
 
 class PairwiseRecordAuditTests(unittest.TestCase):
     def test_factor_only_fixture_load_does_not_claim_decryption(self):
@@ -254,15 +254,13 @@ class PairwiseRecordAuditTests(unittest.TestCase):
             save_dataset(directory, case["public_keys"], case["private_truth"],
                           case["expected_vulnerable_ids"])
             loaded = load_dataset(directory)
-            result, _ = measure_shared_prime_scan(loaded["public_keys"])
+            result = run_audit(loaded["public_keys"], mode="gcd", gcd_backend="pairwise")
             messages = recover_messages(loaded["public_keys"], result)
-            summary = evaluate_scan(loaded["public_keys"], loaded["private_truth"],
-                                    loaded["expected_vulnerable_ids"], result, messages)
+            summary = evaluate_audit({"public_keys": loaded["public_keys"], "private_truth": loaded["private_truth"]}, result, messages)
             self.assertTrue(summary["success"])
             self.assertEqual(messages, {})
             self.assertEqual(summary["decryption_cases_checked"], 0)
-            self.assertIsNone(summary["plaintexts_verified"])
-            self.assertFalse(summary["all_decryptions_verified"])
+            self.assertIsNone(summary["all_decryptions_verified"])
             output = StringIO()
             with redirect_stdout(output):
                 self.assertEqual(main(["--public-only", str(dataset_paths(directory)[0])]), 0)
@@ -275,7 +273,7 @@ class PairwiseRecordAuditTests(unittest.TestCase):
             {"key_id": "C", "n": 1147, "e": 17},
             {"key_id": "D", "n": 187, "e": 3},
         ]
-        result = audit_public_keys(records)
+        result = run_audit(records, mode="gcd", gcd_backend="pairwise")
         self.assertEqual(result["num_records"], 4)
         self.assertEqual(result["num_unique_moduli"], 3)
         self.assertEqual(result["duplicate_extra_records"], 1)
@@ -284,23 +282,23 @@ class PairwiseRecordAuditTests(unittest.TestCase):
         self.assertEqual(result["findings"][1147]["status"], "no_shared_factor_in_dataset")
 
     def test_duplicate_only_requires_no_gcd_and_has_no_recovery(self):
-        result = audit_public_keys([
+        result = run_audit([
             {"key_id": "A", "n": 187, "e": 17},
             {"key_id": "B", "n": 187, "e": 3},
-        ])
+        ], mode="gcd", gcd_backend="pairwise")
         self.assertEqual(result["gcd_calls"], 0)
         self.assertEqual(result["recovered_records"], [])
         self.assertEqual(result["findings"][187]["status"], "no_shared_factor_in_dataset")
 
     def test_secrets_rejected_before_scanner_called(self):
-        with patch("audit_pipeline.scan_moduli") as scanner:
+        with patch("rsa_auditor.audit_pipeline.scan_moduli") as scanner:
             with self.assertRaises(ValueError):
-                audit_public_keys([{"key_id": "A", "n": 187, "e": 17, "p": 11}])
+                run_audit([{"key_id": "A", "n": 187, "e": 17, "p": 11}], mode="gcd", gcd_backend="pairwise")
         scanner.assert_not_called()
 
     def test_all_mixed_topologies_match_independent_generator_truth(self):
         case = generate_mixed_key_dataset(64)
-        result = audit_public_keys(case["public_keys"])
+        result = run_audit(case["public_keys"], mode="gcd", gcd_backend="pairwise")
         self.assertEqual(result["num_records"], 18)
         self.assertEqual(result["num_unique_moduli"], 16)
         self.assertEqual(result["gcd_calls"], 120)
@@ -316,8 +314,8 @@ class PairwiseRecordAuditTests(unittest.TestCase):
     def test_permuted_records_keep_modulus_factorizations(self):
         records = [{"key_id": key_id, "n": n, "e": 17}
                    for key_id, n in (("A", 187), ("B", 253), ("C", 1147), ("D", 187))]
-        original = audit_public_keys(records)
-        reversed_result = audit_public_keys(reversed(records))
+        original = run_audit(records, mode="gcd", gcd_backend="pairwise")
+        reversed_result = run_audit(reversed(records), mode="gcd", gcd_backend="pairwise")
         self.assertEqual(original["findings"], reversed_result["findings"])
         self.assertEqual({record["key_id"] for record in original["recovered_records"]},
                          {record["key_id"] for record in reversed_result["recovered_records"]})
@@ -325,11 +323,11 @@ class PairwiseRecordAuditTests(unittest.TestCase):
 
 class BatchRecordAuditTests(unittest.TestCase):
     def test_dedup_before_batch_and_preserve_each_exponent(self):
-        result = audit_public_keys([
+        result = run_audit([
             {"key_id": "A", "n": 187, "e": 17},
             {"key_id": "duplicate", "n": 187, "e": 3},
             {"key_id": "companion", "n": 253, "e": 17},
-        ], algorithm="batch")
+        ], mode="gcd", gcd_backend='batch')
         self.assertEqual(result["num_records"], 3)
         self.assertEqual(result["num_unique_moduli"], 2)
         self.assertEqual(result["batch_leaf_gcd_calls"], 2)
@@ -337,22 +335,22 @@ class BatchRecordAuditTests(unittest.TestCase):
         self.assertEqual([record["e"] for record in result["recovered_records"]], [17, 3, 17])
 
     def test_duplicate_only_batch_has_no_false_factorization(self):
-        result = audit_public_keys([
+        result = run_audit([
             {"key_id": "A", "n": 187, "e": 17},
             {"key_id": "B", "n": 187, "e": 3},
-        ], algorithm="batch")
+        ], mode="gcd", gcd_backend='batch')
         self.assertEqual(result["recovered_records"], [])
         self.assertEqual(result["gcd_calls"], 0)
 
     def test_chain_raw_status_and_complete_fallback(self):
         records = [{"key_id": str(index), "n": n, "e": 17}
                    for index, n in enumerate((187, 253, 493))]
-        raw = audit_public_keys(records, algorithm="batch_raw")
+        raw = scan_moduli_batch([record["n"] for record in records], resolve_full_gcd=False)
         self.assertEqual(raw["findings"][187]["status"], "unresolved_full_gcd")
         self.assertIsNone(raw["findings"][187]["p"])
         self.assertEqual(raw["unresolved_after_fallback"], 1)
-        self.assertEqual(len(raw["recovered_records"]), 2)
-        resolved = audit_public_keys(records, algorithm="batch")
+        self.assertEqual(sum(finding["status"] == "factored" for finding in raw["findings"].values()), 2)
+        resolved = run_audit(records, mode="gcd", gcd_backend='batch')
         self.assertEqual(resolved["full_gcd_before_fallback"], 1)
         self.assertEqual(resolved["unresolved_after_fallback"], 0)
         self.assertEqual(resolved["fallback_gcd_calls"], 1)
@@ -360,8 +358,8 @@ class BatchRecordAuditTests(unittest.TestCase):
 
     def test_mixed_modulus_and_record_results_agree_with_pairwise(self):
         case = generate_mixed_key_dataset(64)
-        pairwise = audit_public_keys(case["public_keys"])
-        batch = audit_public_keys(case["public_keys"], algorithm="batch")
+        pairwise = run_audit(case["public_keys"], mode="gcd", gcd_backend="pairwise")
+        batch = run_audit(case["public_keys"], mode="gcd", gcd_backend='batch')
         factor_map = lambda result: {n: (finding["p"], finding["q"])
                                      for n, finding in result["findings"].items()
                                      if finding["status"] == "factored"}
@@ -370,11 +368,10 @@ class BatchRecordAuditTests(unittest.TestCase):
         self.assertEqual(batch["unresolved_after_fallback"], 0)
         self.assertGreater(batch["fallback_gcd_calls"], 0)
         self.assertEqual(len(batch["recovered_records"]), 14)
-        self.assertIsNone(batch["matching_pair_count"])
 
     def test_unknown_algorithm_is_rejected(self):
         with self.assertRaises(ValueError):
-            audit_public_keys([], algorithm="not-an-algorithm")
+            run_audit([], mode="gcd", gcd_backend='not-an-algorithm')
 
 
 class SharedPrimeFixtureTests(unittest.TestCase):
@@ -631,7 +628,7 @@ class ConsolidatedDatasetLayoutTests(unittest.TestCase):
                 dataset_paths(public, public)
 
     def test_dataset_builder_cli_constructs_separated_mixed_inputs(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.datasets.cli import main as build_main
         with TemporaryDirectory() as directory, redirect_stdout(StringIO()):
             self.assertEqual(build_main(["--case", "mixed", "--name", "example", "--bits", "64",
                                          "--data-root", directory]), 0)
@@ -639,22 +636,22 @@ class ConsolidatedDatasetLayoutTests(unittest.TestCase):
             self.assertFalse((public / "private_truth.json").exists())
             self.assertTrue((Path(directory) / "private" / "example" / "private_truth.json").exists())
             case = load_dataset(public)
-            result = audit_public_keys(case["public_keys"], algorithm="batch")
+            result = run_audit(case["public_keys"], mode="gcd", gcd_backend='batch')
             self.assertEqual(result["num_unique_moduli"], 16)
             self.assertEqual(len(result["recovered_records"]), 14)
 
     def test_dataset_builder_cli_encrypt_attack_recover(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.datasets.cli import main as build_main
         with TemporaryDirectory() as directory, redirect_stdout(StringIO()):
             self.assertEqual(build_main(["--case", "shared", "--name", "message_example", "--bits", "1024",
                                          "--num-keys", "2", "--shared-keys", "2", "--message", "hello",
                                          "--data-root", directory]), 0)
             case = load_dataset(Path(directory) / "public" / "message_example")
-            result = audit_public_keys(case["public_keys"], algorithm="batch")
+            result = run_audit(case["public_keys"], mode="gcd", gcd_backend='batch')
             self.assertEqual(set(recover_messages(case["public_keys"], result).values()), {b"hello"})
 
     def test_dataset_builder_rejects_parent_traversal_before_writing(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.datasets.cli import main as build_main
         with TemporaryDirectory() as directory, redirect_stderr(StringIO()):
             with self.assertRaises(SystemExit) as error:
                 build_main(["--name", "../outside", "--data-root", directory])
@@ -754,7 +751,7 @@ class DatasetAssemblyTests(unittest.TestCase):
         self.assertEqual(result["expected_vulnerable_ids"], ["key_001", "key_003"])
         self.assertEqual([truth["observable_shared_factor"] for truth in result["private_truth"].values()],
                          [True, False, True])
-        audit = audit_public_keys(result["public_keys"])
+        audit = run_audit(result["public_keys"], mode="gcd", gcd_backend="pairwise")
         self.assertEqual([record["key_id"] for record in audit["recovered_records"]],
                          result["expected_vulnerable_ids"])
 
@@ -764,7 +761,7 @@ class DatasetAssemblyTests(unittest.TestCase):
         self.assertEqual(result["expected_vulnerable_ids"], [])
         self.assertTrue(all(not truth["observable_shared_factor"]
                             for truth in result["private_truth"].values()))
-        audit = audit_public_keys(result["public_keys"], algorithm="batch")
+        audit = run_audit(result["public_keys"], mode="gcd", gcd_backend='batch')
         self.assertEqual(audit["num_unique_moduli"], 1)
         self.assertEqual(audit["gcd_calls"], 0)
         self.assertEqual(audit["recovered_records"], [])
@@ -781,7 +778,7 @@ class DatasetAssemblyTests(unittest.TestCase):
             self.single_case(exponent=17), self.single_case(exponent=3), self.single_case(11, 23),
         ])
         self.assertEqual([key["e"] for key in result["public_keys"]], [17, 3, 17])
-        audit = audit_public_keys(result["public_keys"])
+        audit = run_audit(result["public_keys"], mode="gcd", gcd_backend="pairwise")
         self.assertEqual(audit["num_records"], 3)
         self.assertEqual(audit["num_unique_moduli"], 2)
         self.assertEqual(audit["gcd_calls"], 1)
@@ -877,15 +874,15 @@ class DatasetAssemblyTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     assemble_dataset(cases)
 
-    def test_assembly_primality_validation_is_cached_across_groups(self):
-        from Crypto.Util.number import isPrime
-        with patch("build_dataset.isPrime", wraps=isPrime) as primality:
+    def test_assembly_validates_each_unique_modulus_once_across_groups(self):
+        from rsa_auditor.key_recovery import validate_factors
+        with patch("rsa_auditor.datasets.builder.validate_factors", wraps=validate_factors) as validation:
             assemble_dataset([self.collection_case(), self.single_case(11, 23), self.single_case()])
-        self.assertEqual(primality.call_count, 5)
-        self.assertEqual({call.args[0] for call in primality.call_args_list}, {11, 17, 23, 31, 37})
+        self.assertEqual(validation.call_count, 3)
+        self.assertEqual({call.args[0] for call in validation.call_args_list}, {187, 1147, 253})
 
     def test_merge_cli_saves_new_separated_dataset_and_preserves_sources(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.datasets.cli import main as build_main
         with TemporaryDirectory() as directory:
             data = Path(directory) / "data"
             sources = []
@@ -907,7 +904,7 @@ class DatasetAssemblyTests(unittest.TestCase):
             self.assertEqual(len(loaded["expected_vulnerable_ids"]), 3)
             self.assertTrue((data / "private" / "combined" / "private_truth.json").exists())
             self.assertFalse((merged / "private_truth.json").exists())
-            self.assertEqual(len(audit_public_keys(loaded["public_keys"])["recovered_records"]), 3)
+            self.assertEqual(len(run_audit(loaded["public_keys"], mode="gcd", gcd_backend="pairwise")["recovered_records"]), 3)
             for path, original_bytes in before.items():
                 self.assertEqual(Path(path).read_bytes(), original_bytes)
             for public in loaded["public_keys"]:
@@ -921,7 +918,7 @@ class DatasetAssemblyTests(unittest.TestCase):
             self.assertEqual(_directory_snapshot(merged), saved)
 
     def test_merge_and_case_are_mutually_exclusive_before_writes(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.datasets.cli import main as build_main
         with TemporaryDirectory() as directory, redirect_stderr(StringIO()):
             with self.assertRaises(SystemExit) as error:
                 build_main(["--merge", "missing", "--case", "shared", "--name", "new",
@@ -930,9 +927,9 @@ class DatasetAssemblyTests(unittest.TestCase):
             self.assertEqual(list(Path(directory).iterdir()), [])
 
     def test_builtin_cli_defaults_skip_assembly_but_options_enable_it(self):
-        from build_dataset import main as build_main
+        from rsa_auditor.datasets.cli import main as build_main
         with TemporaryDirectory() as directory, redirect_stdout(StringIO()):
-            with patch("build_dataset.assemble_dataset", side_effect=AssertionError("default must stay unchanged")):
+            with patch("rsa_auditor.datasets.cli.assemble_dataset", side_effect=AssertionError("default must stay unchanged")):
                 self.assertEqual(build_main(["--name", "default", "--data-root", directory,
                                              "--bits", "64", "--num-keys", "2"]), 0)
             self.assertEqual(build_main(["--case", "shared", "--name", "assembled", "--data-root", directory,

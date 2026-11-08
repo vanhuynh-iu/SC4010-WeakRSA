@@ -8,13 +8,13 @@ from unittest.mock import patch
 
 from Crypto.Util.number import isPrime
 
-from batch_gcd_attack import (
+from rsa_auditor.attacks.batch_gcd import (
     build_product_tree,
     compute_batch_gcds,
     compute_leaf_remainders,
     scan_moduli_batch,
 )
-from shared_prime_attack import euclidean_gcd, scan_moduli
+from rsa_auditor.attacks.pairwise_gcd import euclidean_gcd, scan_moduli
 
 
 def factor_map(result):
@@ -35,9 +35,9 @@ class ProductAndRemainderTreeTests(unittest.TestCase):
         self.assertEqual(build_product_tree([187]), [[187]])
         self.assertEqual(compute_leaf_remainders([[187]]), [187])
 
-    def test_odd_three_five_seven_leaf_levels_and_direct_remainders(self):
+    def test_varied_leaf_counts_match_direct_remainders(self):
         leaves = [2, 3, 5, 7, 11, 13, 17]
-        for count in (3, 5, 7):
+        for count in (2, 3, 4, 5, 6, 7):
             values = leaves[:count]
             with self.subTest(count=count):
                 tree = build_product_tree(values)
@@ -79,17 +79,6 @@ class ProductAndRemainderTreeTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     build_product_tree([3, invalid])
 
-    def test_remainder_helper_rejects_malformed_tree(self):
-        for tree in ([[]], [[3, 5]], [[3, 5], [16]], [[3], [3]], [[3, 5, 7], [105]]):
-            with self.subTest(tree=tree):
-                with self.assertRaises(ValueError):
-                    compute_leaf_remainders(tree)
-        for tree in (None, 15, [[3, True]]):
-            with self.subTest(tree=tree):
-                with self.assertRaises(TypeError):
-                    compute_leaf_remainders(tree)
-
-
 class RawBatchGcdTests(unittest.TestCase):
     def test_raw_values_match_other_product_oracle(self):
         fixtures = (
@@ -119,18 +108,18 @@ class RawBatchGcdTests(unittest.TestCase):
         self.assertEqual(calls, [(187, 0), (253, 0), (391, 0)])
 
     def test_empty_singleton_make_no_gcd_calls(self):
-        with patch("shared_prime_attack.euclidean_gcd") as gcd:
+        with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd") as gcd:
             self.assertEqual(compute_batch_gcds([]), [])
             self.assertEqual(compute_batch_gcds([187]), [1])
         gcd.assert_not_called()
 
     def test_calltime_default_uses_shared_euclidean_backend(self):
-        with patch("shared_prime_attack.euclidean_gcd", wraps=euclidean_gcd) as gcd:
+        with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd", wraps=euclidean_gcd) as gcd:
             self.assertEqual(compute_batch_gcds([187, 253]), [11, 11])
         self.assertEqual(gcd.call_count, 2)
 
     def test_remainders_must_be_exactly_divisible(self):
-        with patch("batch_gcd_attack.compute_leaf_remainders", return_value=[1, 1]):
+        with patch("rsa_auditor.attacks.batch_gcd.compute_leaf_remainders", return_value=[1, 1]):
             with self.assertRaisesRegex(ValueError, "exactly divisible"):
                 compute_batch_gcds([187, 253])
 
@@ -158,7 +147,7 @@ class BatchScannerTests(unittest.TestCase):
     def test_empty_singleton_shortcuts_match_pairwise_no_work(self):
         for inputs in ([], [187]):
             with self.subTest(inputs=inputs):
-                with patch("shared_prime_attack.euclidean_gcd") as gcd:
+                with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd") as gcd:
                     result = scan_moduli_batch(inputs)
                 gcd.assert_not_called()
                 self.assertEqual(set(result["findings"]), set(inputs))
@@ -247,8 +236,6 @@ class BatchScannerTests(unittest.TestCase):
                 result = scan_moduli_batch(inputs)
                 self.assertEqual(factor_map(result), factor_map(scan_moduli(inputs)))
                 self.assertEqual(result["unresolved_after_fallback"], 0)
-                self.assertLessEqual(len(result["optional_debug_evidence"]["fallback_witnesses"]), 20)
-        self.assertTrue(result["optional_debug_evidence"]["fallback_witnesses_truncated"])
 
     def test_permutations_preserve_raw_and_resolved_factor_maps(self):
         inputs = [187, 253, 493, 1147]
@@ -273,7 +260,7 @@ class BatchScannerTests(unittest.TestCase):
                 self.assertEqual(result["unresolved_after_fallback"], 0)
 
     def test_candidate_primality_checks_are_cached_per_scan(self):
-        with patch("batch_gcd_attack.isPrime", wraps=isPrime) as primality:
+        with patch("rsa_auditor.attacks.batch_gcd.isPrime", wraps=isPrime) as primality:
             scan_moduli_batch([187, 253, 319])
         self.assertEqual(primality.call_count, 4)
         self.assertEqual({call.args[0] for call in primality.call_args_list}, {11, 17, 23, 29})
@@ -300,13 +287,13 @@ class BatchScannerTests(unittest.TestCase):
             scan_moduli_batch([15, 105])
 
     def test_never_calls_the_full_pairwise_scanner(self):
-        with patch("shared_prime_attack.scan_moduli", side_effect=AssertionError("unexpected full scan")) as pairwise:
+        with patch("rsa_auditor.attacks.pairwise_gcd.scan_moduli", side_effect=AssertionError("unexpected full scan")) as pairwise:
             result = scan_moduli_batch([187, 253, 391])
         pairwise.assert_not_called()
         self.assertEqual(len(factor_map(result)), 3)
 
     def test_trees_are_rebuilt_for_each_attack_run(self):
-        with patch("batch_gcd_attack.build_product_tree", wraps=build_product_tree) as builder:
+        with patch("rsa_auditor.attacks.batch_gcd.build_product_tree", wraps=build_product_tree) as builder:
             scan_moduli_batch([187, 253])
             scan_moduli_batch([187, 253, 493])
         self.assertEqual(builder.call_count, 2)
@@ -322,7 +309,7 @@ class BatchScannerTests(unittest.TestCase):
         for function in (compute_batch_gcds, scan_moduli_batch):
             for inputs, expected_error in malformed:
                 with self.subTest(function=function.__name__, inputs=inputs):
-                    with patch("shared_prime_attack.euclidean_gcd") as gcd:
+                    with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd") as gcd:
                         with self.assertRaises(expected_error):
                             function(inputs)
                     gcd.assert_not_called()

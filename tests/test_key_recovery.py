@@ -8,7 +8,7 @@ from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA1, SHA256
 from Crypto.PublicKey import RSA
 
-from key_recovery import (
+from rsa_auditor.key_recovery import (
     decrypt_with_recovered_key,
     encrypt_message,
     extended_gcd,
@@ -136,7 +136,7 @@ class OaepRecoveryTests(unittest.TestCase):
 
     def test_rejects_product_mismatch(self):
         # Reject a wrong modulus before primality checks or inverse arithmetic.
-        with patch("key_recovery.recover_private_key") as recover:
+        with patch("rsa_auditor.key_recovery.recover_private_key") as recover:
             with self.assertRaisesRegex(ValueError, "do not multiply"):
                 decrypt_with_recovered_key(
                     self.ciphertext, self.n + 2, self.e, self.p, self.q
@@ -169,7 +169,7 @@ class OaepRecoveryTests(unittest.TestCase):
         for p, q in ((True, self.q), (self.p, False), (float(self.p), self.q),
                      (self.p, str(self.q))):
             with self.subTest(p=p, q=q):
-                with patch("key_recovery.recover_private_key") as recover:
+                with patch("rsa_auditor.key_recovery.recover_private_key") as recover:
                     with self.assertRaises(TypeError):
                         decrypt_with_recovered_key(self.ciphertext, self.n, self.e, p, q)
                 recover.assert_not_called()

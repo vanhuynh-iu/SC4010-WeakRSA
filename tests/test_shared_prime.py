@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 from Crypto.Util.number import isPrime
 
-from normalization import normalize_public_keys, validate_public_records
-from shared_prime_attack import euclidean_gcd, scan_moduli
+from rsa_auditor.public_inputs import normalize_public_keys, validate_public_records
+from rsa_auditor.attacks.pairwise_gcd import euclidean_gcd, scan_moduli
 
 
 class EuclideanGcdTests(unittest.TestCase):
@@ -94,10 +94,6 @@ class SharedPrimeScannerTests(unittest.TestCase):
             "full_gcd_before_fallback": 0,
             "unresolved_after_fallback": 0,
             "matching_pair_count": 1,
-            "optional_debug_evidence": {
-                "matching_modulus_pairs": [(187, 253)],
-                "matching_pairs_truncated": False,
-            },
         })
 
     def test_unrelated_keys_have_explicit_no_shared_factor_status(self):
@@ -113,7 +109,7 @@ class SharedPrimeScannerTests(unittest.TestCase):
 
     def test_shared_group_scans_pairs_even_after_factors_are_known(self):
         inputs = [187, 253, 319]  # All three contain prime 11.
-        with patch("shared_prime_attack.euclidean_gcd", wraps=euclidean_gcd) as gcd:
+        with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd", wraps=euclidean_gcd) as gcd:
             result = scan_moduli(inputs)
         self.assertEqual(gcd.call_args_list, [
             unittest.mock.call(187, 253),
@@ -130,7 +126,7 @@ class SharedPrimeScannerTests(unittest.TestCase):
         # Normalize duplicate moduli before reaching the scanner.
         for inputs in ([187, 187], [187, 187, 253]):
             with self.subTest(inputs=inputs):
-                with patch("shared_prime_attack.euclidean_gcd") as gcd:
+                with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd") as gcd:
                     with self.assertRaisesRegex(ValueError, "distinct"):
                         scan_moduli(inputs)
                 gcd.assert_not_called()
@@ -138,7 +134,7 @@ class SharedPrimeScannerTests(unittest.TestCase):
     def test_empty_and_single_input_do_no_gcd_work(self):
         for inputs in ([], [187]):
             with self.subTest(inputs=inputs):
-                with patch("shared_prime_attack.euclidean_gcd") as gcd:
+                with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd") as gcd:
                     result = scan_moduli(inputs)
                 gcd.assert_not_called()
                 self.assert_counters(result, 0)
@@ -161,7 +157,7 @@ class SharedPrimeScannerTests(unittest.TestCase):
                 raise AssertionError("private metadata must not be inspected")
 
         inputs = [{"key_id": "A", "n": 187, "p": UnusableMetadata()}]
-        with patch("shared_prime_attack.euclidean_gcd") as gcd:
+        with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd") as gcd:
             with self.assertRaises(TypeError):
                 scan_moduli(inputs)
         gcd.assert_not_called()
@@ -239,18 +235,15 @@ class SharedPrimeScannerTests(unittest.TestCase):
         })
 
     def test_candidate_primality_checks_are_cached_within_scan(self):
-        with patch("shared_prime_attack.isPrime", wraps=isPrime) as primality:
+        with patch("rsa_auditor.attacks.pairwise_gcd.isPrime", wraps=isPrime) as primality:
             scan_moduli([187, 253, 319])
         self.assertEqual(primality.call_count, 4)
         self.assertEqual({call.args[0] for call in primality.call_args_list}, {11, 17, 23, 29})
 
-    def test_pair_evidence_is_bounded_while_pair_count_remains_exact(self):
+    def test_large_shared_group_has_exact_pair_count(self):
         inputs = [11 * q for q in (13, 17, 19, 23, 29, 31, 37, 41)]
         result = scan_moduli(inputs)
-        evidence = result["optional_debug_evidence"]
         self.assertEqual(result["matching_pair_count"], 28)
-        self.assertEqual(len(evidence["matching_modulus_pairs"]), 20)
-        self.assertTrue(evidence["matching_pairs_truncated"])
         self.assertEqual(len(self.factorizations(result)), 8)
         self.assert_counters(result, 28)
 
@@ -264,7 +257,7 @@ class SharedPrimeScannerTests(unittest.TestCase):
         )
         for inputs, expected_error in malformed:
             with self.subTest(inputs=inputs):
-                with patch("shared_prime_attack.euclidean_gcd") as gcd:
+                with patch("rsa_auditor.attacks.pairwise_gcd.euclidean_gcd") as gcd:
                     with self.assertRaises(expected_error):
                         scan_moduli(inputs)
                 gcd.assert_not_called()

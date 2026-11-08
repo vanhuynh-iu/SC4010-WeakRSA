@@ -9,8 +9,8 @@ from unittest.mock import patch
 
 from Crypto.Util.number import isPrime
 
-from generators.control_cases import generate_control_key
-from generators.shared_prime_cases import (
+from rsa_auditor.datasets.generators.controls import generate_control_key
+from rsa_auditor.datasets.generators.shared_primes import (
     _fresh_factor_pair,
     generate_mixed_key_dataset,
     generate_scalability_dataset,
@@ -118,8 +118,8 @@ class SharedPrimeGenerationTests(unittest.TestCase):
 
     def test_generation_failure_is_bounded_and_explicit(self):
         # Bound retries even with a stuck prime source.
-        with patch("generators.shared_prime_cases._MAX_PRIME_ATTEMPTS", 3):
-            with patch("generators.shared_prime_cases.getPrime", return_value=32771) as source:
+        with patch("rsa_auditor.datasets.generators.shared_primes.MAX_PRIME_ATTEMPTS", 3):
+            with patch("rsa_auditor.datasets.generators.shared_primes.getPrime", return_value=32771) as source:
                 with self.assertRaisesRegex(RuntimeError, "3 attempts"):
                     generate_shared_prime_keys(modulus_bits=32)
                 self.assertEqual(source.call_count, 3)
@@ -127,7 +127,7 @@ class SharedPrimeGenerationTests(unittest.TestCase):
 
     def test_retries_a_prime_dividing_the_public_exponent(self):
         # gcd(e,p-1)=1 does not prevent p=e; reject that library-invalid key.
-        with patch("generators.shared_prime_cases.getPrime", side_effect=[65521, 65519, 65497]) as source:
+        with patch("rsa_auditor.datasets.generators.shared_primes.getPrime", side_effect=[65521, 65519, 65497]) as source:
             p, q = _fresh_factor_pair(modulus_bits=32, e=65521, used=set())
         self.assertEqual(source.call_count, 3)
         self.assertEqual(p, 65519)
@@ -267,8 +267,8 @@ class MixedDatasetTests(unittest.TestCase):
                 with self.assertRaises(expected_error):
                     generate_mixed_key_dataset(**kwargs)
         # This 17-bit prime exceeds the allowed odd-size range.
-        with patch("generators.shared_prime_cases._MAX_PRIME_ATTEMPTS", 3):
-            with patch("generators.shared_prime_cases.getPrime", return_value=131071) as source:
+        with patch("rsa_auditor.datasets.generators.shared_primes.MAX_PRIME_ATTEMPTS", 3):
+            with patch("rsa_auditor.datasets.generators.shared_primes.getPrime", return_value=131071) as source:
                 with self.assertRaisesRegex(RuntimeError, "3 attempts"):
                     generate_mixed_key_dataset(33)
                 self.assertEqual(source.call_count, 3)

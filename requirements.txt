@@ -1,7 +1,2 @@
 pycryptodome==3.24.1
 matplotlib==3.9.4
-
-# Close-prime experiment and plotting scripts
-numpy
-pandas
-dataframe-image

@@ -1,7 +1,0 @@
-services:
-  rsa-project:
-    build: .
-    volumes:
-      - .:/project
-    stdin_open: true
-    tty: true

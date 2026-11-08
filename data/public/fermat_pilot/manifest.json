@@ -1,0 +1,28 @@
+{
+  "format": "weak-rsa-manifest",
+  "public_format": "weak-rsa-public",
+  "private_format": "weak-rsa-private",
+  "public_sha256": "9053669649e6e481154dc3c446ccbcb75a4f7fe42e898888d6300933ca28689b",
+  "private_sha256": "3a5c970bb3486a873f38e2cb8bf077c60e3177f9e9d0ecc3fbf2c53357d21b76",
+  "num_records": 9,
+  "num_unique_moduli": 9,
+  "duplicate_extra_records": 0,
+  "modulus_bit_lengths": [
+    2048
+  ],
+  "python_version": "3.9.6",
+  "pycryptodome_version": "3.24.1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "created_at_utc": "2026-11-07T22:29:16+00:00",
+  "construction_metadata": {
+    "study": "paired_fermat_pilot",
+    "gap_bits": [
+      515,
+      518,
+      520
+    ],
+    "keys_per_gap": 3,
+    "modulus_bits": 2048,
+    "e": 65537
+  }
+}
