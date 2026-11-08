@@ -1,0 +1,75 @@
+{
+  "run_id": "20261107T223157Z_9c1fa3f0",
+  "mode": "correctness",
+  "python_version": "3.9.6",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "pycryptodome_version": "3.24.1",
+  "source_sha256": {
+    "rsa_auditor/__init__.py": "8182ff2e1d44c4f90300dee5f594398857c055d20010c90a34c84ff15f16a3f5",
+    "rsa_auditor/__main__.py": "f4fac3df4f2e89cb2ebf0a1fa16d7054a98184dc9f6affeca0bcb37f0db16300",
+    "rsa_auditor/attacks/__init__.py": "797fb17ef666b544735851eb94493bae2622a807050e82c62f6a1c9ecc0151f9",
+    "rsa_auditor/attacks/batch_gcd.py": "48d3b1c8dea129c24a33e9a0c758cdafcea886385d524d7b832cad1720548bf1",
+    "rsa_auditor/attacks/fermat.py": "346edfb94a327f4d9ecfca673c9569e52b0f747de2da5efa2ece9f970d046da4",
+    "rsa_auditor/attacks/fermat_original.py": "96c630b453fdde36292f7b1fc62371064ca8654e301cac30e4aa765e11a93fff",
+    "rsa_auditor/attacks/pairwise_gcd.py": "6de2421ccfd49767f3a7f77551dce42bed2aae25f8b134f8facc1f6efbc818d8",
+    "rsa_auditor/audit_pipeline.py": "cc139e3756e550ab5095595bf3142599cd0e7480eb1cf0eac2ea5f695ae2af2b",
+    "rsa_auditor/cli.py": "d1e47bf683d331751d12104f72ba781e49de09507f21e398dc8ab8a2fed34888",
+    "rsa_auditor/datasets/__init__.py": "405aa646ba9cbcfe8e1343fda5effbc0cb505935df60adb5ebfe117232543cc4",
+    "rsa_auditor/datasets/__main__.py": "5ceff7abbf34e2153309d45b913d7fc629c245d99b8a01b44682111596f222a3",
+    "rsa_auditor/datasets/builder.py": "0bd222aeca495d80c7eef6e0ea57045d4d659deae673783b147d80ce3e9c8499",
+    "rsa_auditor/datasets/cli.py": "d87f28d02d128d9a779808594dd6df1fc46f4c4a7a23b0bb0276863707c930b8",
+    "rsa_auditor/datasets/generators/__init__.py": "b95fadd5dd4888c5035d8219c48887cafd0b352fb1913d23d372d9571c0cb4fb",
+    "rsa_auditor/datasets/generators/close_primes.py": "4ac1ed47c72fd2126e8428746e42d7089371344f439fa0a4f4a82a15ee9dc607",
+    "rsa_auditor/datasets/generators/close_primes_original.py": "65c3faf090eba789e5642eafb27ac62d32812d20a63b957eabc06c60fb456d32",
+    "rsa_auditor/datasets/generators/controls.py": "82855db808b7ebabe21b1590512579ef0287f0e08013499b89b896641b135406",
+    "rsa_auditor/datasets/generators/shared_primes.py": "cbee033f0c0abbf2a4cae69d14bc9fe5583eac09ebd27e18ff73defe48af616c",
+    "rsa_auditor/datasets/storage.py": "d2daae3aa4c6289632ffaf774ccba61a9c7f1a151c533231efad2087ec21d5aa",
+    "rsa_auditor/evaluation/__init__.py": "353792be9e16e55f07f34e3486a3b5512d53565eaf981db3b9b1d8dd267ff5c6",
+    "rsa_auditor/evaluation/checks.py": "efbe0a8f20fc792b23c79b568818576e87308af62dd7b9a42ba18ac4421c2c7a",
+    "rsa_auditor/evaluation/gcd.py": "2b3124e40ff80075e0879317effc1a6581904d91fb02a5364e5881751e7b42d5",
+    "rsa_auditor/evaluation/reference.py": "178028bc8bbe3f175a9e43295c29d6f65d2b13169fe009f9c92ba147ee8524c3",
+    "rsa_auditor/experiments/__init__.py": "e6d6f8831706027f3628ce3b1a678b190e41608a22b3adb6906e8b617e9c7df8",
+    "rsa_auditor/experiments/__main__.py": "834af594ab210f349d19b87c89a758eda96f08a2c543ea04bbb50350c220d676",
+    "rsa_auditor/experiments/cli.py": "a3108e77669e6678fcd44984404294b9930577f07826d6d22cf86a439167d126",
+    "rsa_auditor/experiments/common.py": "5211950ad8869fabe67cf6eea2635649eddcb41ec06d05ee680b4291c5d56236",
+    "rsa_auditor/experiments/comparison.py": "b598641fa641fc723f1f28738c301488a13d29dd60d53f2564887ae22a96311f",
+    "rsa_auditor/experiments/fermat_pilot.py": "c526f8131c3cd0e77faed85059f06a1e0fb3f2e6c94b1fd1887ff112d2eee041",
+    "rsa_auditor/experiments/gcd_checks.py": "c0c72ee40bc6ddd8f1624629cf1e5577dd3cb47abe7133057d6f14cbe528b805",
+    "rsa_auditor/experiments/gcd_scalability.py": "20f62546902b436167d4072766d1381122d2dda3483ab82345ac767c49863cca",
+    "rsa_auditor/experiments/plots.py": "d790f42e76587a38163570addff095a2974fb2a0bddf90ff032992c0f6bc8619",
+    "rsa_auditor/key_recovery.py": "ba6e299672772972b9d3e0d3c065014cd64bf4973eeccc008d034d1b068c290b",
+    "rsa_auditor/public_inputs.py": "6c78fc42a64357e78793922cb85083c7990f8dbd24615f0bba80050c4a2c7a73",
+    "rsa_auditor/records.py": "3268993e1af67225420979b4808a6beff37d5d83ee894554d778de8add72de95"
+  },
+  "git": {
+    "revision": "4c552fdf96959f606e5ed6233095f40117708a48",
+    "dirty": false
+  },
+  "created_at_utc": "2026-11-07T22:32:00.616195+00:00",
+  "algorithms": [
+    "pairwise",
+    "batch_with_fallback"
+  ],
+  "gcd_backend": "euclidean",
+  "measurement_kind": "single correctness check; not a benchmark",
+  "scan_timing_boundary": "complete scanner call; normalization/recovery/evaluation excluded",
+  "truth_access": "fixture evaluation outside public-key attack only",
+  "datasets": [
+    {
+      "dataset_id": "van_mixed",
+      "directory": "/Users/van_flora/Desktop/SC4010-WeakRSA/data/public/van_mixed",
+      "public_sha256": "129448e8123a316f795ab6ae595c38262dddd756d93f8afaec0d21661c2521b1",
+      "modulus_bit_lengths": [
+        2048
+      ],
+      "num_records": 18,
+      "num_unique_moduli": 16
+    }
+  ],
+  "summary": {
+    "run_id": "20261107T223157Z_9c1fa3f0",
+    "all_runs_ok": true,
+    "num_datasets": 1,
+    "rows_written": 2
+  }
+}

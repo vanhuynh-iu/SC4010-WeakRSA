@@ -1,0 +1,34 @@
+{
+  "run_id": "20261107T223248Z_16efb03e",
+  "all_runs_ok": true,
+  "num_datasets": 1,
+  "trials_requested": 5,
+  "timing_rows": 10,
+  "memory_rows": 2,
+  "statistics": [
+    {
+      "dataset_id": "van_mixed",
+      "algorithm": "pairwise",
+      "num_unique_moduli": 16,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 0.453321584,
+      "min_seconds": 0.450830167,
+      "max_seconds": 0.461838625,
+      "stdev_seconds": 0.004446986866481133
+    },
+    {
+      "dataset_id": "van_mixed",
+      "algorithm": "batch_with_fallback",
+      "num_unique_moduli": 16,
+      "gcd_backend": "euclidean",
+      "trials_completed": 5,
+      "trials_requested": 5,
+      "median_seconds": 0.445312833,
+      "min_seconds": 0.444950584,
+      "max_seconds": 0.458439042,
+      "stdev_seconds": 0.005945276668347645
+    }
+  ]
+}
