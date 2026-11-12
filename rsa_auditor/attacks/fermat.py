@@ -182,17 +182,20 @@ def fermat_factor(n: int, max_candidates: int) -> dict:
             "candidate_tests": 0,
         }
 
-    result = fermat_attack(n, max_iterations=max_candidates)
-    if result is None:
+    result = fermat_sieved(n, max_iterations=max_candidates, moduli=(64,3,5,7))
+
+    if not isinstance(result, tuple) or len(result) != 5:
+        raise ValueError("Fermat backend returned a malformed result")
+    
+    p, q, candidate_tests, square_checks, preprocessing_time = result
+    if p is None and q is None:
         return {
             "status": "budget_exhausted",
             "factors": None,
-            "candidate_tests": max_candidates,
+            "candidate_tests": candidate_tests,
         }
-    if not isinstance(result, tuple) or len(result) != 3:
-        raise ValueError("Fermat backend returned a malformed result")
-    p, q, candidate_tests = result
     p, q = validate_factors(n, p, q)
+
     if (type(candidate_tests) is not int or
             not 1 <= candidate_tests <= max_candidates):
         raise ValueError("Fermat backend returned an invalid candidate count")
