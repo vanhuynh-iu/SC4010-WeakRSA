@@ -159,7 +159,7 @@ def generate_auditor_dataset(modulus_bits: int = 2048,
         truth["intended_weak_generation"] = truth["case_type"] == "shared_prime"
 
     cases = [base]
-    for offset in (3, 5, 8):
+    for offset in (8, 11, 14):
         for _ in range(MAX_AUDITOR_CASE_ATTEMPTS):
             candidate = close_primes.generate_close_prime_key(
                 modulus_bits, e, gap_bits=modulus_bits // 4 + offset)
